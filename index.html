@@ -1020,7 +1020,7 @@ document.getElementById('gh-push').onclick=async()=>{
   const payload={description:'Desk data',public:false,files:{'desk-data.json':{content:JSON.stringify(safe)}}};
   try{
     const url='https://api.github.com/gists'+(DB.sync.gistId?'/'+DB.sync.gistId:'');
-    const res=await fetch(url,{method:DB.sync.gistId?'PATCH':'POST',headers:{Authorization:'token '+tok,Accept:'application/vnd.github+json'},body:JSON.stringify(payload)});
+    const res=await fetch(url,{method:DB.sync.gistId?'PATCH':'POST',headers:{Authorization:'Bearer '+tok,Accept:'application/vnd.github+json'},body:JSON.stringify(payload)});
     if(!res.ok)throw new Error(res.status);
     const j=await res.json();DB.sync.gistId=j.id;save();document.getElementById('gh-gist').value=j.id;ghStatus('Pushed \u2713 '+new Date().toLocaleTimeString());
   }catch(e){ghStatus('Push failed ('+e.message+')');}
@@ -1029,7 +1029,7 @@ document.getElementById('gh-pull').onclick=async()=>{
   const tok=DB.sync.token,gid=DB.sync.gistId;if(!tok||!gid){ghStatus('Need token + Gist ID');return;}
   ghStatus('Pulling…');
   try{
-    const res=await fetch('https://api.github.com/gists/'+gid,{headers:{Authorization:'token '+tok,Accept:'application/vnd.github+json'}});
+    const res=await fetch('https://api.github.com/gists/'+gid,{headers:{Authorization:'Bearer '+tok,Accept:'application/vnd.github+json'}});
     if(!res.ok)throw new Error(res.status);
     const j=await res.json();const content=j.files['desk-data.json'].content;
     const inc=JSON.parse(content);const tok2=DB.sync.token,gid2=DB.sync.gistId;
