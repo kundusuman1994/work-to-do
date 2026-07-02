@@ -1007,7 +1007,7 @@ document.getElementById('review-reset').onclick=()=>{DB.review.forEach(r=>r.done
 
 /* ======================= SYNC ======================= */
 function renderSync(){document.getElementById('gh-token').value=DB.sync.token||'';document.getElementById('gh-gist').value=DB.sync.gistId||'';}
-document.getElementById('exp').onclick=()=>{const blob=new Blob([JSON.stringify(DB,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='desk-backup-'+ymd(new Date())+'.json';a.click();};
+document.getElementById('exp').onclick=()=>{const safe=Object.assign({},DB,{sync:{token:'',gistId:''}});const blob=new Blob([JSON.stringify(safe,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='desk-backup-'+ymd(new Date())+'.json';a.click();};
 document.getElementById('imp').onclick=()=>document.getElementById('imp-file').click();
 document.getElementById('imp-file').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{DB=Object.assign(structuredClone(DEFAULT),JSON.parse(r.result));save();toast('Backup loaded');render('today');document.querySelector('.nav button.active')?.click?.();location.reload();}catch(err){toast('Could not read file');}};r.readAsText(f);};
 document.getElementById('gh-token').addEventListener('input',e=>{DB.sync.token=e.target.value.trim();save();});
@@ -1016,7 +1016,8 @@ const ghStatus=m=>document.getElementById('gh-status').textContent=m;
 document.getElementById('gh-push').onclick=async()=>{
   const tok=DB.sync.token;if(!tok){ghStatus('Add a token first');return;}
   ghStatus('Pushing…');
-  const payload={description:'Desk data',public:false,files:{'desk-data.json':{content:JSON.stringify(DB)}}};
+  const safe=Object.assign({},DB,{sync:{token:'',gistId:''}});
+  const payload={description:'Desk data',public:false,files:{'desk-data.json':{content:JSON.stringify(safe)}}};
   try{
     const url='https://api.github.com/gists'+(DB.sync.gistId?'/'+DB.sync.gistId:'');
     const res=await fetch(url,{method:DB.sync.gistId?'PATCH':'POST',headers:{Authorization:'token '+tok,Accept:'application/vnd.github+json'},body:JSON.stringify(payload)});
