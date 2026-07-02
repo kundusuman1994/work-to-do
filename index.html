@@ -115,6 +115,10 @@ tr:last-child td{border-bottom:none}
 .tbl-input:focus{border-color:transparent;background:var(--surface)}
 td select.tbl-input{width:auto;min-width:96px}
 .num-cell{font-variant-numeric:tabular-nums;color:var(--muted);white-space:nowrap;font-size:12.5px}
+.date-disp{cursor:pointer;color:var(--ink);font-size:12.5px;font-variant-numeric:tabular-nums;padding:5px 6px;border-radius:5px;display:inline-block;border:1px solid transparent;white-space:nowrap;min-width:52px}
+.date-disp:hover{border-color:var(--line);background:var(--surface)}
+.date-disp.empty-date{color:var(--faint)}
+.date-inline{border:1px solid var(--accent)!important;background:var(--surface)!important;border-radius:5px;padding:4px 6px;width:132px}
 
 /* pct cell */
 .pct-cell{position:relative;text-align:center;font-variant-numeric:tabular-nums;font-weight:600;color:#3a3327;border-radius:5px;min-width:64px}
@@ -202,6 +206,9 @@ hr.soft{border:none;border-top:1px solid var(--line);margin:20px 0}
 /* arxiv */
 .arxiv-item{padding:12px 16px;border-bottom:1px solid var(--line)}
 .arxiv-item:last-child{border-bottom:none}
+.ax-row{display:flex;gap:11px;align-items:flex-start}
+.ax-row .ax-check{margin-top:3px;flex-shrink:0}
+.ax-main{flex:1;min-width:0}
 .ax-title{font-family:'Spectral',serif;font-size:15px;font-weight:500;color:var(--ink);text-decoration:none;display:block;line-height:1.35}
 .ax-title:hover{color:var(--accent)}
 .ax-id{font-variant-numeric:tabular-nums;color:var(--faint);font-size:11.5px;font-weight:600}
@@ -265,6 +272,7 @@ hr.soft{border:none;border-top:1px solid var(--line);margin:20px 0}
       <button data-view="research"><span class="dot"></span>Research</button>
       <button data-view="teaching"><span class="dot"></span>Teaching</button>
       <button data-view="notes"><span class="dot"></span>Notes</button>
+      <button data-view="reading"><span class="dot"></span>Reading</button>
       <button data-view="review"><span class="dot"></span>Weekly review</button>
       <button data-view="sync"><span class="dot"></span>Sync &amp; backup</button>
     </nav>
@@ -336,10 +344,10 @@ hr.soft{border:none;border-top:1px solid var(--line);margin:20px 0}
       <div class="card" style="overflow-x:auto;margin-top:14px">
         <table id="res-table">
           <thead><tr>
-            <th style="width:70px">No.</th><th>Project</th><th style="width:120px">Status</th>
-            <th style="width:78px" class="center">%</th><th style="width:40px" class="center">Done</th>
-            <th style="width:130px">Start</th><th style="width:130px">Target</th>
-            <th>Comments</th><th style="width:30px"></th>
+            <th style="width:60px">No.</th><th style="min-width:240px">Project</th><th style="width:92px">Status</th>
+            <th style="width:66px" class="center">%</th><th style="width:40px" class="center">Done</th>
+            <th style="width:74px">Start</th><th style="width:74px">Target</th>
+            <th style="width:180px">Comments</th><th style="width:30px"></th>
           </tr></thead>
           <tbody id="res-body"></tbody>
         </table>
@@ -385,6 +393,22 @@ hr.soft{border:none;border-top:1px solid var(--line);margin:20px 0}
       <div class="notes-layout" style="margin-top:12px">
         <div class="note-list" id="note-list"></div>
         <div class="card card-pad note-edit" id="note-edit"><div class="empty">Select or create a note. Markdown and $LaTeX$ supported.</div></div>
+      </div>
+    </section>
+
+    <!-- ============ READING ============ -->
+    <section class="view" id="view-reading">
+      <div class="eyebrow">Reading</div>
+      <div class="page-head"><h1>Reading list</h1></div>
+      <p class="muted" style="margin:0 0 14px">Papers you tick on the arXiv feed land here, newest first. Add your own notes in the comment column.</p>
+      <div class="card" style="overflow-x:auto">
+        <table id="reading-table">
+          <thead><tr>
+            <th>Paper</th><th style="width:132px">arXiv</th><th style="width:104px">Added</th>
+            <th style="width:34%">Comment</th><th style="width:30px"></th>
+          </tr></thead>
+          <tbody id="reading-body"></tbody>
+        </table>
       </div>
     </section>
 
@@ -476,6 +500,19 @@ hr.soft{border:none;border-top:1px solid var(--line);margin:20px 0}
   </div>
 </div>
 
+<!-- sub-task picker modal -->
+<div class="modal-bg" id="sub-bg">
+  <div class="modal" style="width:420px">
+    <h3>Add sub-task</h3>
+    <div class="field"><label class="fld">Under which project?</label><select id="sub-parent"></select></div>
+    <div class="field"><label class="fld">Sub-task title</label><input type="text" id="sub-title" placeholder="New sub-task"></div>
+    <div class="modal-foot">
+      <span></span>
+      <div class="btn-row"><button class="btn btn-sm" id="sub-cancel">Cancel</button><button class="btn btn-primary btn-sm" id="sub-save">Add sub-task</button></div>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -485,7 +522,7 @@ const KEY='profdesk_v1';
 const COLORS=['#B4603F','#5B7B9A','#7FA663','#C79A3C','#8A6BA8','#4C8C86'];
 const DEFAULT={
   settings:{semesterStart:'',totalWeeks:16},
-  notes:[], events:[], research:[], teaching:[], review:[], reviewWeek:'',
+  notes:[], events:[], research:[], teaching:[], review:[], reviewWeek:'', reading:[],
   weeklyRem:[], monthlyRem:[], remWeekKey:'', remMonthKey:'', remSeeded:false,
   sync:{token:'',gistId:''}
 };
@@ -533,7 +570,7 @@ document.getElementById('nav').addEventListener('click',e=>{
   document.getElementById('view-'+b.dataset.view).classList.add('active');
   render(b.dataset.view);
 });
-function render(v){({today:renderToday,calendar:renderCal,research:renderResearch,teaching:renderTeaching,notes:renderNotes,review:renderReview,sync:renderSync}[v]||(()=>{}))();}
+function render(v){({today:renderToday,calendar:renderCal,research:renderResearch,teaching:renderTeaching,notes:renderNotes,reading:renderReading,review:renderReview,sync:renderSync}[v]||(()=>{}))();}
 
 /* ======================= recurrence expansion ======================= */
 function expandEvents(rangeStart,rangeEnd){
@@ -689,6 +726,7 @@ document.getElementById('ev-delete').onclick=()=>{DB.events=DB.events.filter(e=>
 
 /* ======================= RESEARCH ======================= */
 function depth(n){return(String(n||'').match(/\./g)||[]).length;}
+function shortDate(s){if(!s)return'set';const d=parseYMD(s);return d.getDate()+' '+MON3[d.getMonth()];}
 function pctColor(p){p=Math.max(0,Math.min(100,+p||0));const R=[217,139,111],A=[227,178,60],G=[127,166,99];let c;if(p<=50){const t=p/50;c=R.map((v,i)=>Math.round(v+(A[i]-v)*t));}else{const t=(p-50)/50;c=A.map((v,i)=>Math.round(v+(G[i]-v)*t));}return`rgb(${c[0]},${c[1]},${c[2]})`;}
 function isCollapsed(n){return (DB._collapsed||[]).includes(n);}
 function renderResearch(){
@@ -706,8 +744,8 @@ function renderResearch(){
       <td><input class="tbl-input" data-f="status" value="${esc(r.status)}" list="statuses"></td>
       <td class="pct-cell" style="background:${r.percent?pctColor(r.percent):'transparent'}"><input data-f="percent" type="number" min="0" max="100" value="${r.percent||0}">%</td>
       <td class="center"><input type="checkbox" class="check" data-f="done" ${r.done?'checked':''}></td>
-      <td><input class="tbl-input" data-f="start" type="date" value="${r.start||''}"></td>
-      <td><input class="tbl-input" data-f="target" type="date" value="${r.target||''}"></td>
+      <td><span class="date-disp ${r.start?'':'empty-date'}" data-edit="start">${shortDate(r.start)}</span></td>
+      <td><span class="date-disp ${r.target?'':'empty-date'}" data-edit="target">${shortDate(r.target)}</span></td>
       <td><input class="tbl-input" data-f="comments" value="${esc(r.comments)}" placeholder="…" style="width:100%"></td>
       <td><button class="del-x" data-del="${r.id}">×</button></td>
     </tr>`;
@@ -726,10 +764,40 @@ document.getElementById('res-body').addEventListener('input',e=>{
 });
 document.getElementById('res-body').addEventListener('click',e=>{
   const del=e.target.closest('[data-del]');if(del){DB.research=DB.research.filter(x=>x.id!==del.dataset.del);save();renderResearch();return;}
-  const tog=e.target.closest('[data-tog]');if(tog){DB._collapsed=DB._collapsed||[];const n=tog.dataset.tog;const i=DB._collapsed.indexOf(n);i>=0?DB._collapsed.splice(i,1):DB._collapsed.push(n);save();renderResearch();}
+  const tog=e.target.closest('[data-tog]');if(tog){DB._collapsed=DB._collapsed||[];const n=tog.dataset.tog;const i=DB._collapsed.indexOf(n);i>=0?DB._collapsed.splice(i,1):DB._collapsed.push(n);save();renderResearch();return;}
+  const dd=e.target.closest('.date-disp');if(dd){
+    const tr=dd.closest('tr');const r=DB.research.find(x=>x.id===tr.dataset.id);if(!r)return;
+    const field=dd.dataset.edit;
+    const inp=document.createElement('input');inp.type='date';inp.value=r[field]||'';inp.className='date-inline';
+    dd.replaceWith(inp);inp.focus();if(inp.showPicker){try{inp.showPicker();}catch(_){}}
+    let done=false;const commit=()=>{if(done)return;done=true;r[field]=inp.value;save();renderResearch();renderResGantt();};
+    inp.addEventListener('change',commit);inp.addEventListener('blur',commit);
+  }
 });
 document.getElementById('res-add').onclick=()=>{const tops=DB.research.filter(r=>depth(r.number)===0).length;DB.research.push({id:uid(),number:String(tops+1),title:'New project',status:'Starting',percent:0,done:false,start:'',target:'',comments:''});save();renderResearch();};
-document.getElementById('res-addsub').onclick=()=>{const last=DB.research[DB.research.length-1];const base=last?String(last.number).split('.')[0]:'1';const kids=DB.research.filter(r=>r.number&&r.number.startsWith(base+'.')&&depth(r.number)===1).length;DB.research.push({id:uid(),number:base+'.'+(kids+1),title:'New sub-task',status:'Ongoing',percent:0,done:false,start:'',target:'',comments:''});save();renderResearch();};
+const subBg=document.getElementById('sub-bg');
+document.getElementById('res-addsub').onclick=()=>{
+  const opts=DB.research.filter(r=>r.number);
+  if(!opts.length){toast('Add a project first');return;}
+  document.getElementById('sub-parent').innerHTML=opts.map(r=>`<option value="${esc(r.number)}">${esc(r.number)} — ${esc(r.title||'')}</option>`).join('');
+  document.getElementById('sub-title').value='';
+  subBg.classList.add('show');
+  setTimeout(()=>document.getElementById('sub-title').focus(),40);
+};
+document.getElementById('sub-cancel').onclick=()=>subBg.classList.remove('show');
+subBg.addEventListener('click',e=>{if(e.target===subBg)subBg.classList.remove('show');});
+document.getElementById('sub-save').onclick=()=>{
+  const parent=document.getElementById('sub-parent').value;if(!parent)return;
+  const title=document.getElementById('sub-title').value.trim()||'New sub-task';
+  const kids=DB.research.filter(r=>r.number&&r.number.startsWith(parent+'.')&&depth(r.number)===depth(parent)+1).length;
+  const num=parent+'.'+(kids+1);
+  const newRow={id:uid(),number:num,title,status:'Ongoing',percent:0,done:false,start:'',target:'',comments:''};
+  // insert right after the parent's existing subtree so it nests visually
+  let insertAt=DB.research.length;const pIdx=DB.research.findIndex(r=>r.number===parent);
+  if(pIdx>=0){insertAt=pIdx+1;for(let i=pIdx+1;i<DB.research.length;i++){if(DB.research[i].number&&DB.research[i].number.startsWith(parent+'.'))insertAt=i+1;else break;}}
+  DB.research.splice(insertAt,0,newRow);
+  save();subBg.classList.remove('show');renderResearch();toast('Sub-task added under '+parent);
+};
 function renderResGantt(){
   const el=document.getElementById('res-gantt');
   const rows=DB.research.filter(r=>r.start&&r.target);
@@ -775,9 +843,22 @@ async function loadArxiv(force){
     const authors=axClean(get(it,'dc:creator'));
     let abs=axClean(get(it,'description').split(/Abstract:/i).pop());if(abs.length>340)abs=abs.slice(0,340)+'\u2026';
     const id=(link.match(/abs\/([^\s?#]+)/)||[])[1]||'';
-    return `<div class="arxiv-item"><a class="ax-title" href="${esc(link)}" target="_blank" rel="noopener">${esc(title)}</a>${id?`<span class="ax-id">arXiv:${esc(id)}</span>`:''}<div class="ax-auth">${esc(authors)}</div><div class="ax-abs">${esc(abs)}</div></div>`;
+    const key=id||link;
+    const inReading=DB.reading.some(x=>x.key===key);
+    return `<div class="arxiv-item"><div class="ax-row"><input type="checkbox" class="check ax-check" ${inReading?'checked':''} title="Add to Reading list" data-key="${esc(key)}" data-title="${esc(title)}" data-link="${esc(link)}" data-authors="${esc(authors)}" data-axid="${esc(id)}"><div class="ax-main"><a class="ax-title" href="${esc(link)}" target="_blank" rel="noopener">${esc(title)}</a>${id?`<span class="ax-id">arXiv:${esc(id)}</span>`:''}<div class="ax-auth">${esc(authors)}</div><div class="ax-abs">${esc(abs)}</div></div></div></div>`;
   }).join('');
-  el.innerHTML=`<div class="ax-head"><span>${news.length} new submissions</span><span class="faint">${new Date().toLocaleDateString()}</span></div>`+rows;
+  el.innerHTML=`<div class="ax-head"><span>${news.length} new submissions</span><span class="faint">tick to add to Reading &middot; ${new Date().toLocaleDateString()}</span></div>`+rows;
+  el.querySelectorAll('.ax-check').forEach(cb=>cb.addEventListener('change',()=>{
+    const key=cb.dataset.key;
+    if(cb.checked){
+      if(!DB.reading.some(x=>x.key===key)){
+        DB.reading.unshift({id:uid(),key,arxivId:cb.dataset.axid||'',title:cb.dataset.title||'',link:cb.dataset.link||'',authors:cb.dataset.authors||'',comment:'',added:Date.now()});
+        save();toast('Added to Reading');
+      }
+    }else{
+      DB.reading=DB.reading.filter(x=>x.key!==key);save();toast('Removed from Reading');
+    }
+  }));
   arxivLoaded=true;
 }
 const axBtn=document.getElementById('arxiv-refresh');if(axBtn)axBtn.onclick=()=>loadArxiv(true);
@@ -841,6 +922,26 @@ function renderPreview(md){
   if(window.renderMathInElement)try{renderMathInElement(el,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],throwOnError:false});}catch(e){}
 }
 document.getElementById('note-add').onclick=()=>{const n={id:uid(),title:'',body:'',updated:Date.now()};DB.notes.push(n);curNote=n.id;save();renderNotes();setTimeout(()=>document.getElementById('note-title')?.focus(),40);};
+
+/* ======================= READING ======================= */
+function renderReading(){
+  const body=document.getElementById('reading-body');
+  const rows=[...DB.reading].sort((a,b)=>(b.added||0)-(a.added||0));
+  body.innerHTML=rows.map(r=>`<tr data-id="${r.id}">
+    <td><a class="ax-title" style="font-size:14px" href="${esc(r.link||'#')}" target="_blank" rel="noopener">${esc(r.title||'(untitled)')}</a>${r.authors?`<div class="ax-auth">${esc(r.authors)}</div>`:''}</td>
+    <td class="num-cell">${r.arxivId?`<a href="${esc(r.link||'#')}" target="_blank" rel="noopener" style="color:var(--faint)">arXiv:${esc(r.arxivId)}</a>`:'—'}</td>
+    <td class="num-cell">${r.added?new Date(r.added).toLocaleDateString():''}</td>
+    <td><input class="tbl-input" data-f="comment" value="${esc(r.comment)}" placeholder="notes\u2026" style="width:100%"></td>
+    <td><button class="del-x" data-del="${r.id}">×</button></td>
+  </tr>`).join('')||`<tr><td colspan="5" class="empty">No papers yet — tick a paper in the arXiv feed on the Research page.</td></tr>`;
+}
+document.getElementById('reading-body').addEventListener('input',e=>{
+  const tr=e.target.closest('tr');if(!tr)return;const r=DB.reading.find(x=>x.id===tr.dataset.id);if(!r)return;
+  if(e.target.dataset.f==='comment'){r.comment=e.target.value;save();}
+});
+document.getElementById('reading-body').addEventListener('click',e=>{
+  const d=e.target.closest('[data-del]');if(d){DB.reading=DB.reading.filter(x=>x.id!==d.dataset.del);save();renderReading();}
+});
 
 /* ======================= REVIEW ======================= */
 function renderRemList(elId,arr,empty){
