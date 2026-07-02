@@ -539,6 +539,7 @@ let DB=load();
 function load(){try{const r=JSON.parse(localStorage.getItem(KEY));return r?Object.assign(structuredClone(DEFAULT),r):seed();}catch(e){return seed();}}
 let saveT;
 function save(){clearTimeout(saveT);saveT=setTimeout(()=>localStorage.setItem(KEY,JSON.stringify(DB)),120);}
+function saveNow(){clearTimeout(saveT);localStorage.setItem(KEY,JSON.stringify(DB));}
 function uid(){return Math.random().toString(36).slice(2,9);}
 function seed(){
   const d=structuredClone(DEFAULT);
@@ -1009,7 +1010,7 @@ document.getElementById('review-reset').onclick=()=>{DB.review.forEach(r=>r.done
 function renderSync(){document.getElementById('gh-token').value=DB.sync.token||'';document.getElementById('gh-gist').value=DB.sync.gistId||'';}
 document.getElementById('exp').onclick=()=>{const safe=Object.assign({},DB,{sync:{token:'',gistId:''}});const blob=new Blob([JSON.stringify(safe,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='desk-backup-'+ymd(new Date())+'.json';a.click();};
 document.getElementById('imp').onclick=()=>document.getElementById('imp-file').click();
-document.getElementById('imp-file').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{DB=Object.assign(structuredClone(DEFAULT),JSON.parse(r.result));save();toast('Backup loaded');render('today');document.querySelector('.nav button.active')?.click?.();location.reload();}catch(err){toast('Could not read file');}};r.readAsText(f);};
+document.getElementById('imp-file').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const t=DB.sync.token,g=DB.sync.gistId;DB=Object.assign(structuredClone(DEFAULT),JSON.parse(r.result));DB.sync.token=t;DB.sync.gistId=g;saveNow();toast('Backup loaded');location.reload();}catch(err){toast('Could not read file');}};r.readAsText(f);};
 document.getElementById('gh-token').addEventListener('input',e=>{DB.sync.token=e.target.value.trim();save();});
 document.getElementById('gh-gist').addEventListener('input',e=>{DB.sync.gistId=e.target.value.trim();save();});
 const ghStatus=m=>document.getElementById('gh-status').textContent=m;
@@ -1033,7 +1034,7 @@ document.getElementById('gh-pull').onclick=async()=>{
     if(!res.ok)throw new Error(res.status);
     const j=await res.json();const content=j.files['desk-data.json'].content;
     const inc=JSON.parse(content);const tok2=DB.sync.token,gid2=DB.sync.gistId;
-    DB=Object.assign(structuredClone(DEFAULT),inc);DB.sync.token=tok2;DB.sync.gistId=gid2;save();
+    DB=Object.assign(structuredClone(DEFAULT),inc);DB.sync.token=tok2;DB.sync.gistId=gid2;saveNow();
     ghStatus('Pulled \u2713');toast('Synced from Gist');location.reload();
   }catch(e){ghStatus('Pull failed ('+e.message+')');}
 };
