@@ -127,7 +127,7 @@ td select.tbl-input{width:auto;min-width:96px}
 .pct-cell input[type=number]{-moz-appearance:textfield}
 .pct-cell input::-webkit-outer-spin-button,.pct-cell input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 .pct-wrap{display:flex;align-items:center;justify-content:center;gap:1px}
-.pct-wrap input{width:50px;padding:0;text-align:center}
+.pct-wrap input{width:44px;padding:0;text-align:right}
 .pct-step{display:none;flex-direction:column;line-height:1;margin-left:1px}
 .pct-cell:hover .pct-step{display:flex}
 .pct-step button{border:none;background:none;cursor:pointer;font-size:8px;color:var(--muted);padding:0 2px;height:9px}
@@ -386,7 +386,7 @@ hr.soft{border:none;border-top:1px solid var(--line);margin:20px 0}
         <table id="teach-table">
           <thead><tr>
             <th style="width:120px">Course</th><th style="width:52px" class="center">#</th>
-            <th style="width:140px">Date</th><th>Topic</th>
+            <th style="width:74px">Date</th><th>Topic</th>
             <th style="width:44px" class="center">Prep</th><th style="width:120px">Status</th>
             <th>Comments</th><th style="width:30px"></th>
           </tr></thead>
@@ -899,7 +899,7 @@ function renderTeaching(){
     return `<tr data-id="${t.id}">
       <td><input class="tbl-input" data-f="course" value="${esc(t.course)}" placeholder="Course" style="width:100%"></td>
       <td class="center"><input class="tbl-input" data-f="lec" value="${esc(t.lec)}" style="width:40px;text-align:center"></td>
-      <td><input class="tbl-input" data-f="date" type="date" value="${t.date||''}"></td>
+      <td><span class="date-disp ${t.date?'':'empty-date'}" data-edit="date">${shortDate(t.date)}</span></td>
       <td><input class="tbl-input" data-f="topic" value="${esc(t.topic)}" placeholder="Topic" style="width:100%"></td>
       <td class="center"><input type="checkbox" class="check" data-f="prepDone" ${t.prepDone?'checked':''} title="Preparation done?"></td>
       <td><span class="pill pill-${st.k}">${st.label}</span></td>
@@ -914,7 +914,16 @@ document.getElementById('teach-body').addEventListener('input',e=>{
   save();
 });
 document.getElementById('teach-body').addEventListener('change',e=>{if(e.target.dataset.f==='date')renderTeaching();});
-document.getElementById('teach-body').addEventListener('click',e=>{const d=e.target.closest('[data-del]');if(d){DB.teaching=DB.teaching.filter(x=>x.id!==d.dataset.del);save();renderTeaching();}});
+document.getElementById('teach-body').addEventListener('click',e=>{
+  const d=e.target.closest('[data-del]');if(d){DB.teaching=DB.teaching.filter(x=>x.id!==d.dataset.del);save();renderTeaching();return;}
+  const dd=e.target.closest('.date-disp');if(dd){
+    const tr=dd.closest('tr');const t=DB.teaching.find(x=>x.id===tr.dataset.id);if(!t)return;
+    const inp=document.createElement('input');inp.type='date';inp.value=t.date||'';inp.className='date-inline';
+    dd.replaceWith(inp);inp.focus();if(inp.showPicker){try{inp.showPicker();}catch(_){}}
+    let done=false;const commit=()=>{if(done)return;done=true;t.date=inp.value;save();renderTeaching();};
+    inp.addEventListener('change',commit);inp.addEventListener('blur',commit);
+  }
+});
 document.getElementById('teach-add').onclick=()=>{DB.teaching.push({id:uid(),course:'',lec:'',date:ymd(TODAY),topic:'',prepDone:false,comments:''});save();renderTeaching();};
 
 /* ======================= NOTES ======================= */
