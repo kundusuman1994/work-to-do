@@ -124,6 +124,14 @@ td select.tbl-input{width:auto;min-width:96px}
 .pct-cell{position:relative;text-align:center;font-variant-numeric:tabular-nums;font-weight:600;color:#3a3327;border-radius:5px;min-width:64px}
 .pct-cell input{background:none;border:none;text-align:center;width:46px;font-weight:600;color:inherit}
 .pct-cell input:focus{outline:none}
+.pct-cell input[type=number]{-moz-appearance:textfield}
+.pct-cell input::-webkit-outer-spin-button,.pct-cell input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.pct-wrap{display:flex;align-items:center;justify-content:center;gap:1px}
+.pct-wrap input{width:32px}
+.pct-step{display:none;flex-direction:column;line-height:1;margin-left:1px}
+.pct-cell:hover .pct-step{display:flex}
+.pct-step button{border:none;background:none;cursor:pointer;font-size:8px;color:var(--muted);padding:0 2px;height:9px}
+.pct-step button:hover{color:var(--ink)}
 .pct-derived{display:inline-block;padding:5px 0;cursor:default;opacity:.92}
 
 /* chips / pills */
@@ -746,7 +754,7 @@ function renderResearch(){
     const pv=hasKids?rollupPct(r):(r.percent||0);
     const pctCell=hasKids
       ? `<td class="pct-cell" style="background:${pv?pctColor(pv):'transparent'}" title="rolled up from sub-tasks"><span class="pct-derived">${pv}%</span></td>`
-      : `<td class="pct-cell" style="background:${r.percent?pctColor(r.percent):'transparent'}"><input data-f="percent" type="number" min="0" max="100" value="${r.percent||0}">%</td>`;
+      : `<td class="pct-cell" style="background:${r.percent?pctColor(r.percent):'transparent'}"><div class="pct-wrap"><input data-f="percent" type="number" min="0" max="100" value="${r.percent||0}"><span>%</span><span class="pct-step"><button data-step="1">▲</button><button data-step="-1">▼</button></span></div></td>`;
     return `<tr data-id="${r.id}" class="${hidden?'row-hidden':''}">
       <td class="num-cell">${tog}${esc(r.number||'')}</td>
       <td><input class="tbl-input indent-${Math.min(d,3)}" data-f="title" value="${esc(r.title)}" style="width:100%;${d===0?'font-weight:600':''}"></td>
@@ -772,6 +780,7 @@ document.getElementById('res-body').addEventListener('input',e=>{
   if(f==='percent'||f==='start'||f==='target')renderResGantt();
 });
 document.getElementById('res-body').addEventListener('click',e=>{
+  const st=e.target.closest('[data-step]');if(st){const tr=st.closest('tr');const r=DB.research.find(x=>x.id===tr.dataset.id);if(!r)return;const v=Math.max(0,Math.min(100,(+r.percent||0)+(+st.dataset.step)));r.percent=v;const inp=tr.querySelector('input[data-f="percent"]');if(inp)inp.value=v;st.closest('.pct-cell').style.background=v?pctColor(v):'transparent';refreshAncestorPct(r.number);save();renderResGantt();return;}
   const del=e.target.closest('[data-del]');if(del){DB.research=DB.research.filter(x=>x.id!==del.dataset.del);save();renderResearch();return;}
   const tog=e.target.closest('[data-tog]');if(tog){DB._collapsed=DB._collapsed||[];const n=tog.dataset.tog;const i=DB._collapsed.indexOf(n);i>=0?DB._collapsed.splice(i,1):DB._collapsed.push(n);save();renderResearch();return;}
   const dd=e.target.closest('.date-disp');if(dd){
