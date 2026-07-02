@@ -610,7 +610,7 @@ function renderToday(){
   const now=new Date();
   document.getElementById('today-eyebrow').textContent=DOW[now.getDay()]+' \u00b7 '+now.getDate()+' '+MON[now.getMonth()]+' '+now.getFullYear();
   const hr=now.getHours();
-  document.getElementById('today-title').textContent=hr<12?'Good morning.':hr<17?'Good afternoon.':'Good evening.';
+  document.getElementById('today-title').textContent=(hr<12?'Good morning':hr<17?'Good afternoon':'Good evening')+', Suman.';
   // semester
   const s=DB.settings;
   const semEl=document.getElementById('sem-week'),bar=document.getElementById('sem-bar');
