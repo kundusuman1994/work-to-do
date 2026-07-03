@@ -187,6 +187,8 @@ hr.soft{border:none;border-top:1px solid var(--line);margin:20px 0}
 .dnum{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;border-radius:50%;font-size:12.5px;font-weight:600;font-variant-numeric:tabular-nums}
 .ev{margin-top:3px;padding:2px 6px;border-radius:5px;font-size:11.5px;font-weight:500;color:#fff;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ev .evtime{opacity:.85;font-variant-numeric:tabular-nums;margin-right:3px}
+.ev-lec{font-style:italic}
+.ev-lec::before{content:"";display:inline-block;width:0;height:0;border-left:4px solid rgba(255,255,255,.9);border-top:3px solid transparent;border-bottom:3px solid transparent;margin-right:4px;vertical-align:middle}
 .agenda .day-row{display:grid;grid-template-columns:130px 1fr;gap:14px;padding:14px 0;border-bottom:1px solid var(--line)}
 .agenda .day-row:last-child{border-bottom:none}
 .agenda .day-label{font-weight:600}
@@ -386,11 +388,16 @@ hr.soft{border:none;border-top:1px solid var(--line);margin:20px 0}
           <div><label class="fld">Current week</label><div style="padding:7px 0;font-weight:600" id="sem-now">—</div></div>
         </div>
       </div>
+      <div class="seg" id="teach-pages" style="margin-bottom:14px">
+        <button data-page="0" class="active">Lecture 1</button>
+        <button data-page="1">Lecture 2</button>
+      </div>
+      <p class="muted" style="margin:0 0 14px;font-size:12.5px">Two independent lecture pages &mdash; double-click a tab to rename. Every dated lecture also appears on the Calendar.</p>
       <div class="card" style="overflow-x:auto">
         <table id="teach-table">
           <thead><tr>
             <th style="width:120px">Course</th><th style="width:52px" class="center">#</th>
-            <th style="width:74px">Date</th><th>Topic</th>
+            <th style="width:150px">Date &amp; time</th><th>Topic</th>
             <th style="width:44px" class="center">Prep</th><th style="width:120px">Status</th>
             <th>Comments</th><th style="width:30px"></th>
           </tr></thead>
@@ -533,10 +540,12 @@ hr.soft{border:none;border-top:1px solid var(--line);margin:20px 0}
 if(typeof structuredClone!=='function'){window.structuredClone=o=>JSON.parse(JSON.stringify(o));}
 const KEY='profdesk_v1';
 const COLORS=['#B4603F','#5B7B9A','#7FA663','#C79A3C','#8A6BA8','#4C8C86'];
+const LEC_COLOR='#5B7B9A';
 const DEFAULT={
   settings:{semesterStart:'',totalWeeks:16},
   notes:[], events:[], research:[], teaching:[], review:[], reviewWeek:'', reading:[],
   weeklyRem:[], monthlyRem:[], remWeekKey:'', remMonthKey:'', remSeeded:false,
+  teachPage:0, teachNames:['Lecture 1','Lecture 2'],
   sync:{token:'',gistId:''}
 };
 let DB=load();
@@ -607,6 +616,25 @@ function expandEvents(rangeStart,rangeEnd){
   }
   return out.sort((a,b)=>a._s-b._s);
 }
+/* ---- teaching lectures as calendar events ---- */
+function lecDate(t){if(!t.date)return null;const p=t.date.split('-').map(Number);let hh=9,mm=0;if(t.time){const q=t.time.split(':');hh=+q[0]||0;mm=+q[1]||0;}return new Date(p[0],p[1]-1,p[2],hh,mm);}
+function lecTitle(t){const nm=(DB.teachNames&&DB.teachNames[t.page||0])||'Lecture';return (t.course||nm)+(t.topic?' \u00b7 '+t.topic:'');}
+function teachingEvents(rangeStart,rangeEnd){
+  const out=[];
+  for(const t of DB.teaching){
+    const s=lecDate(t);if(!s)continue;if(s>rangeEnd||s<rangeStart)continue;
+    out.push({id:'lec_'+t.id,lecId:t.id,page:t.page||0,isLecture:true,title:lecTitle(t),details:t.comments||'',color:LEC_COLOR,_s:s,_e:new Date(s.getTime()+3600000)});
+  }
+  return out;
+}
+function allEventsInRange(s,e){return[...expandEvents(s,e),...teachingEvents(s,e)].sort((a,b)=>a._s-b._s);}
+function gotoLecture(page){
+  DB.teachPage=+page||0;save();
+  document.querySelectorAll('.nav button').forEach(x=>x.classList.toggle('active',x.dataset.view==='teaching'));
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-teaching').classList.add('active');
+  renderTeaching();
+}
 
 /* ======================= TODAY ======================= */
 function pctBand(p){return p>=67?'green':p>=34?'amber':'red';}
@@ -669,7 +697,7 @@ function renderMonth(){
   const first=new Date(calRef.getFullYear(),calRef.getMonth(),1);
   const gridStart=addDays(first,-first.getDay());
   const cells=[];for(let i=0;i<42;i++)cells.push(addDays(gridStart,i));
-  const evs=expandEvents(gridStart,addDays(gridStart,42));
+  const evs=allEventsInRange(gridStart,addDays(gridStart,42));
   let html='<div class="cal-grid">'+DOW.map(d=>`<div class="cal-dow">${d}</div>`).join('');
   for(const c of cells){
     const dim=c.getMonth()!==calRef.getMonth();
@@ -677,31 +705,31 @@ function renderMonth(){
     const dayEvs=evs.filter(e=>sameDay(e._s,c)).slice(0,4);
     html+=`<div class="cal-cell ${dim?'dim':''} ${today?'today':''}" data-d="${ymd(c)}">
       <div class="dnum">${c.getDate()}</div>
-      ${dayEvs.map(e=>`<div class="ev" style="background:${e.color||COLORS[0]}" data-ev="${e.id}" data-inst="${e._s.toISOString()}"><span class="evtime">${e.recur&&e.recur!=='none'?'':fmtTime(e._s)}</span>${esc(e.title||'')}</div>`).join('')}
+      ${dayEvs.map(e=>e.isLecture?`<div class="ev ev-lec" style="background:${LEC_COLOR}" data-lec="${e.lecId}" data-page="${e.page}" title="Lecture \u2014 click to open in Teaching"><span class="evtime">${fmtTime(e._s)}</span>${esc(e.title||'')}</div>`:`<div class="ev" style="background:${e.color||COLORS[0]}" data-ev="${e.id}" data-inst="${e._s.toISOString()}"><span class="evtime">${e.recur&&e.recur!=='none'?'':fmtTime(e._s)}</span>${esc(e.title||'')}</div>`).join('')}
     </div>`;
   }
   html+='</div>';
   const body=document.getElementById('cal-body');body.innerHTML=html;
   body.querySelectorAll('.cal-cell').forEach(c=>c.addEventListener('click',e=>{if(e.target.closest('.ev'))return;openEvent(null,new Date(c.dataset.d+'T09:00'));}));
-  body.querySelectorAll('.ev').forEach(el=>el.addEventListener('click',e=>{e.stopPropagation();openEvent(el.dataset.ev);}));
+  body.querySelectorAll('.ev').forEach(el=>el.addEventListener('click',e=>{e.stopPropagation();if(el.dataset.lec){gotoLecture(el.dataset.page);}else{openEvent(el.dataset.ev);}}));
 }
 function renderAgenda(){
   let days,title;
   if(calMode==='day'){days=[startOfDay(calRef)];title=fmtDayShort(calRef)+', '+calRef.getFullYear();}
   else{const s=addDays(startOfDay(calRef),-calRef.getDay());days=[];for(let i=0;i<7;i++)days.push(addDays(s,i));title=fmtDayShort(days[0])+' \u2013 '+fmtDayShort(days[6]);}
   document.getElementById('cal-title').textContent=title;
-  const evs=expandEvents(days[0],addDays(days[days.length-1],1));
+  const evs=allEventsInRange(days[0],addDays(days[days.length-1],1));
   let html='<div class="card card-pad agenda">';
   for(const d of days){
     const de=evs.filter(e=>sameDay(e._s,d));
     html+=`<div class="day-row"><div class="day-label">${DOW[d.getDay()]} <span class="sub">${d.getDate()} ${MON3[d.getMonth()]}${sameDay(d,TODAY)?' \u00b7 today':''}</span></div><div>`;
     if(!de.length)html+='<div class="faint" style="padding:6px 0">—</div>';
-    else de.forEach(e=>{html+=`<div class="ev-line" data-ev="${e.id}" style="cursor:pointer"><div class="tm">${fmtTime(e._s)}</div><div class="swatch" style="background:${e.color||COLORS[0]}"></div><div><div class="tt">${esc(e.title||'')}</div>${e.details?`<div class="dd">${esc(e.details)}</div>`:''}</div></div>`;});
+    else de.forEach(e=>{const ca=e.isLecture?`data-lec="${e.lecId}" data-page="${e.page}"`:`data-ev="${e.id}"`;html+=`<div class="ev-line" ${ca} style="cursor:pointer"><div class="tm">${fmtTime(e._s)}</div><div class="swatch" style="background:${e.isLecture?LEC_COLOR:(e.color||COLORS[0])}"></div><div><div class="tt">${esc(e.title||'')}</div>${e.details?`<div class="dd">${esc(e.details)}</div>`:''}</div></div>`;});
     html+='</div></div>';
   }
   html+='</div>';
   const body=document.getElementById('cal-body');body.innerHTML=html;
-  body.querySelectorAll('.ev-line').forEach(el=>el.addEventListener('click',()=>openEvent(el.dataset.ev)));
+  body.querySelectorAll('.ev-line').forEach(el=>el.addEventListener('click',()=>{if(el.dataset.lec){gotoLecture(el.dataset.page);}else{openEvent(el.dataset.ev);}}));
 }
 
 /* event modal */
@@ -893,26 +921,31 @@ function teachWeek(){
   const s=DB.settings;const el=document.getElementById('sem-now');
   if(s.semesterStart){const wk=Math.floor((TODAY-parseYMD(s.semesterStart))/(7*864e5))+1;el.textContent='Week '+Math.max(wk,0)+' of '+s.totalWeeks;}else el.textContent='—';
 }
+function lecDateLabel(t){if(!t.date)return'set';const d=lecDate(t);let s=d.getDate()+' '+MON3[d.getMonth()];if(t.time)s+=' \u00b7 '+fmtTime(d);return s;}
 function renderTeaching(){
   document.getElementById('sem-start').value=DB.settings.semesterStart||'';
   document.getElementById('sem-total').value=DB.settings.totalWeeks||16;
   teachWeek();
+  const pg=DB.teachPage||0;
+  document.querySelectorAll('#teach-pages button').forEach(b=>{const i=+b.dataset.page;b.textContent=(DB.teachNames&&DB.teachNames[i])||('Lecture '+(i+1));b.classList.toggle('active',i===pg);});
   const body=document.getElementById('teach-body');
-  const rows=[...DB.teaching].sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+  const rows=[...DB.teaching].filter(t=>(t.page||0)===pg).sort((a,b)=>(a.date||'').localeCompare(b.date||'')||(a.time||'').localeCompare(b.time||''));
   body.innerHTML=rows.map(t=>{
     const st=prepStatus(t);
     return `<tr data-id="${t.id}">
       <td><input class="tbl-input" data-f="course" value="${esc(t.course)}" placeholder="Course" style="width:100%"></td>
       <td class="center"><input class="tbl-input" data-f="lec" value="${esc(t.lec)}" style="width:40px;text-align:center"></td>
-      <td><span class="date-disp ${t.date?'':'empty-date'}" data-edit="date">${shortDate(t.date)}</span></td>
+      <td><span class="date-disp ${t.date?'':'empty-date'}" data-edit="date">${lecDateLabel(t)}</span></td>
       <td><input class="tbl-input" data-f="topic" value="${esc(t.topic)}" placeholder="Topic" style="width:100%"></td>
       <td class="center"><input type="checkbox" class="check" data-f="prepDone" ${t.prepDone?'checked':''} title="Preparation done?"></td>
       <td><span class="pill pill-${st.k}">${st.label}</span></td>
       <td><input class="tbl-input" data-f="comments" value="${esc(t.comments)}" title="${esc(t.comments)}" placeholder="…" style="width:100%"></td>
       <td><button class="del-x" data-del="${t.id}">×</button></td>
     </tr>`;
-  }).join('')||`<tr><td colspan="8" class="empty">No lectures yet — add one.</td></tr>`;
+  }).join('')||`<tr><td colspan="8" class="empty">No lectures on this page yet — add one.</td></tr>`;
 }
+document.getElementById('teach-pages').addEventListener('click',e=>{const b=e.target.closest('button[data-page]');if(!b)return;DB.teachPage=+b.dataset.page;save();renderTeaching();});
+document.getElementById('teach-pages').addEventListener('dblclick',e=>{const b=e.target.closest('button[data-page]');if(!b)return;const i=+b.dataset.page;const cur=(DB.teachNames&&DB.teachNames[i])||('Lecture '+(i+1));const nm=prompt('Rename this page',cur);if(nm!=null){if(!DB.teachNames)DB.teachNames=['Lecture 1','Lecture 2'];DB.teachNames[i]=nm.trim()||('Lecture '+(i+1));save();renderTeaching();}});
 document.getElementById('teach-body').addEventListener('input',e=>{
   const tr=e.target.closest('tr');if(!tr)return;const t=DB.teaching.find(x=>x.id===tr.dataset.id);if(!t)return;const f=e.target.dataset.f;if(!f)return;
   if(f==='prepDone'){t.prepDone=e.target.checked;renderTeaching();}else{t[f]=e.target.value;if(f==='comments')e.target.title=e.target.value;}
@@ -923,13 +956,14 @@ document.getElementById('teach-body').addEventListener('click',e=>{
   const d=e.target.closest('[data-del]');if(d){DB.teaching=DB.teaching.filter(x=>x.id!==d.dataset.del);save();renderTeaching();return;}
   const dd=e.target.closest('.date-disp');if(dd){
     const tr=dd.closest('tr');const t=DB.teaching.find(x=>x.id===tr.dataset.id);if(!t)return;
-    const inp=document.createElement('input');inp.type='date';inp.value=t.date||'';inp.className='date-inline';
+    const inp=document.createElement('input');inp.type='datetime-local';inp.className='date-inline';inp.style.width='192px';
+    inp.value=toLocal(lecDate(t)||new Date(TODAY.getTime()+9*3600000));
     dd.replaceWith(inp);inp.focus();if(inp.showPicker){try{inp.showPicker();}catch(_){}}
-    let done=false;const commit=()=>{if(done)return;done=true;t.date=inp.value;save();renderTeaching();};
+    let done=false;const commit=()=>{if(done)return;done=true;const v=inp.value;if(v){t.date=v.slice(0,10);t.time=v.slice(11,16);}else{t.date='';t.time='';}save();renderTeaching();};
     inp.addEventListener('change',commit);inp.addEventListener('blur',commit);
   }
 });
-document.getElementById('teach-add').onclick=()=>{DB.teaching.push({id:uid(),course:'',lec:'',date:ymd(TODAY),topic:'',prepDone:false,comments:''});save();renderTeaching();};
+document.getElementById('teach-add').onclick=()=>{DB.teaching.push({id:uid(),course:'',lec:'',date:ymd(TODAY),time:'09:00',page:(DB.teachPage||0),topic:'',prepDone:false,comments:''});save();renderTeaching();toast('Lecture added \u00b7 also on the Calendar');};
 
 /* ======================= NOTES ======================= */
 let curNote=null;
@@ -991,7 +1025,7 @@ function renderReview(){
   document.getElementById('review-week').textContent='Week of '+parseYMD(DB.reviewWeek).toLocaleDateString(undefined,{month:'long',day:'numeric'});
   // calendar for this week (Sun–Sat)
   const start=sundayOf(now),end=addDays(start,7);
-  const evs=expandEvents(start,end);
+  const evs=allEventsInRange(start,end);
   document.getElementById('review-cal').innerHTML=evs.length?evs.map(e=>`<div class="item"><div class="when">${fmtDayShort(e._s)}</div><div class="body"><div class="t">${fmtTime(e._s)} ${esc(e.title||'')}</div>${e.details?`<div class="d">${esc(e.details)}</div>`:''}</div></div>`).join(''):'<div class="empty">No events this week.</div>';
   renderRemList('review-list',DB.review,'No items. Add your Sunday ritual.');
   renderRemList('weekly-rem',DB.weeklyRem,'No weekly reminders.');
