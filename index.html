@@ -86,7 +86,7 @@ a{color:var(--accent)}
 
 /* ---------- quick sync controls (per page) ---------- */
 .sync-seg{display:inline-flex;border:1px solid var(--line-strong);border-radius:7px;overflow:hidden;flex-shrink:0}
-.sync-seg button{border:none;background:var(--surface);padding:2px 6px;cursor:pointer;color:#000;font-weight:700;border-right:1px solid var(--line);font-size:12px;line-height:1;transition:background .12s,color .12s}
+.sync-seg button{border:none;background:var(--surface);padding:6px 13px;cursor:pointer;color:#000;font-weight:700;border-right:1px solid var(--line);font-size:15px;line-height:1;transition:background .12s,color .12s}
 .sync-seg button:last-child{border-right:none}
 .sync-seg button:hover{background:var(--surface-2)}
 .sync-seg button:active{background:var(--accent);color:#fff}
@@ -1113,11 +1113,6 @@ if(!DB.remSeeded){
 /* ---------- quick sync controls on every page (except Sync) ---------- */
 function goSync(){const b=document.querySelector('.nav button[data-view="sync"]');if(b)b.click();}
 const SEG_BTNS='<button data-sync="push" title="Push to Gist">\u2191</button><button data-sync="pull" title="Pull from Gist">\u2193</button>';
-document.querySelectorAll('.view').forEach(v=>{
-  if(v.id==='view-sync')return;
-  const eb=v.querySelector('.eyebrow');
-  if(eb&&!eb.querySelector('.sync-seg'))eb.insertAdjacentHTML('beforeend','<div class="sync-seg">'+SEG_BTNS+'</div>');
-});
 const syncFab=document.createElement('div');
 syncFab.id='sync-fab';syncFab.className='sync-seg sync-fab';syncFab.innerHTML=SEG_BTNS;
 document.body.appendChild(syncFab);
