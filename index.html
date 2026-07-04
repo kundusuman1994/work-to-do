@@ -93,7 +93,10 @@ a{color:var(--accent)}
 .sync-seg button.busy{background:var(--accent);color:#fff;cursor:default}
 .sync-fab{position:fixed;bottom:20px;right:22px;z-index:40;background:var(--surface);box-shadow:0 3px 12px rgba(42,38,32,.14)}
 .sync-fab.hide{display:none}
-@media(max-width:720px){.sync-fab{bottom:14px;right:14px}}
+@media(max-width:720px){
+  .sync-fab{bottom:calc(16px + env(safe-area-inset-bottom));right:calc(14px + env(safe-area-inset-right));z-index:60;border:1px solid var(--line-strong);border-radius:10px;box-shadow:0 5px 18px rgba(42,38,32,.24)}
+  .sync-fab button{padding:12px 20px;font-size:20px}
+}
 
 /* ---------- cards ---------- */
 .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
