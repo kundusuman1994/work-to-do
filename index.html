@@ -82,7 +82,18 @@ a{color:var(--accent)}
 
 .page-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:6px;gap:16px;flex-wrap:wrap}
 .page-head h1{font-size:30px}
-.eyebrow{font-family:'Inter';font-size:11px;text-transform:uppercase;letter-spacing:.14em;color:var(--faint);font-weight:600;margin-bottom:22px}
+.eyebrow{font-family:'Inter';font-size:11px;text-transform:uppercase;letter-spacing:.14em;color:var(--faint);font-weight:600;margin-bottom:22px;display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:26px}
+
+/* ---------- quick sync controls (per page) ---------- */
+.sync-seg{display:inline-flex;border:1px solid var(--line-strong);border-radius:7px;overflow:hidden;flex-shrink:0}
+.sync-seg button{border:none;background:var(--surface);padding:2px 6px;cursor:pointer;color:#000;font-weight:700;border-right:1px solid var(--line);font-size:12px;line-height:1;transition:background .12s,color .12s}
+.sync-seg button:last-child{border-right:none}
+.sync-seg button:hover{background:var(--surface-2)}
+.sync-seg button:active{background:var(--accent);color:#fff}
+.sync-seg button.busy{background:var(--accent);color:#fff;cursor:default}
+.sync-fab{position:fixed;bottom:20px;right:22px;z-index:40;background:var(--surface);box-shadow:0 3px 12px rgba(42,38,32,.14)}
+.sync-fab.hide{display:none}
+@media(max-width:720px){.sync-fab{bottom:14px;right:14px}}
 
 /* ---------- cards ---------- */
 .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
@@ -297,7 +308,7 @@ hr.soft{border:none;border-top:1px solid var(--line);margin:20px 0}
   <main class="main">
     <!-- ============ TODAY ============ -->
     <section class="view active" id="view-today">
-      <div class="eyebrow" id="today-eyebrow">Today</div>
+      <div class="eyebrow"><span id="today-eyebrow">Today</span></div>
       <div class="page-head"><h1 id="today-title">Good day.</h1></div>
 
       <div class="semester card card-pad">
@@ -1051,22 +1062,31 @@ document.getElementById('imp').onclick=()=>document.getElementById('imp-file').c
 document.getElementById('imp-file').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const t=DB.sync.token,g=DB.sync.gistId;DB=Object.assign(structuredClone(DEFAULT),JSON.parse(r.result));DB.sync.token=t;DB.sync.gistId=g;saveNow();toast('Backup loaded');location.reload();}catch(err){toast('Could not read file');}};r.readAsText(f);};
 document.getElementById('gh-token').addEventListener('input',e=>{DB.sync.token=e.target.value.trim();save();});
 document.getElementById('gh-gist').addEventListener('input',e=>{DB.sync.gistId=e.target.value.trim();save();});
-const ghStatus=m=>document.getElementById('gh-status').textContent=m;
-document.getElementById('gh-push').onclick=async()=>{
-  const tok=DB.sync.token;if(!tok){ghStatus('Add a token first');return;}
-  ghStatus('Pushing…');
+const ghStatus=m=>{const el=document.getElementById('gh-status');if(el)el.textContent=m;};
+/* toggle the .busy state on every quick-sync button of a given kind */
+function syncBusy(kind,on){document.querySelectorAll(`[data-sync="${kind}"]`).forEach(b=>b.classList.toggle('busy',on));}
+let syncing=false;
+async function syncPush(){
+  if(syncing)return;
+  const tok=DB.sync.token;
+  if(!tok){ghStatus('Add a token first');toast('Set up sync on the Sync page first');goSync();return;}
+  syncing=true;syncBusy('push',true);ghStatus('Pushing…');toast('Pushing…');
   const safe=Object.assign({},DB,{sync:{token:'',gistId:''}});
   const payload={description:'Desk data',public:false,files:{'desk-data.json':{content:JSON.stringify(safe)}}};
   try{
     const url='https://api.github.com/gists'+(DB.sync.gistId?'/'+DB.sync.gistId:'');
     const res=await fetch(url,{method:DB.sync.gistId?'PATCH':'POST',headers:{Authorization:'Bearer '+tok,Accept:'application/vnd.github+json'},body:JSON.stringify(payload)});
     if(!res.ok)throw new Error(res.status);
-    const j=await res.json();DB.sync.gistId=j.id;save();document.getElementById('gh-gist').value=j.id;ghStatus('Pushed \u2713 '+new Date().toLocaleTimeString());
-  }catch(e){ghStatus('Push failed ('+e.message+')');}
-};
-document.getElementById('gh-pull').onclick=async()=>{
-  const tok=DB.sync.token,gid=DB.sync.gistId;if(!tok||!gid){ghStatus('Need token + Gist ID');return;}
-  ghStatus('Pulling…');
+    const j=await res.json();DB.sync.gistId=j.id;save();const gi=document.getElementById('gh-gist');if(gi)gi.value=j.id;
+    ghStatus('Pushed \u2713 '+new Date().toLocaleTimeString());toast('Pushed to Gist \u2713');
+  }catch(e){ghStatus('Push failed ('+e.message+')');toast('Push failed ('+e.message+')');}
+  finally{syncing=false;syncBusy('push',false);}
+}
+async function syncPull(){
+  if(syncing)return;
+  const tok=DB.sync.token,gid=DB.sync.gistId;
+  if(!tok||!gid){ghStatus('Need token + Gist ID');toast('Set up sync on the Sync page first');goSync();return;}
+  syncing=true;syncBusy('pull',true);ghStatus('Pulling…');toast('Pulling…');
   try{
     const res=await fetch('https://api.github.com/gists/'+gid,{headers:{Authorization:'Bearer '+tok,Accept:'application/vnd.github+json'}});
     if(!res.ok)throw new Error(res.status);
@@ -1074,8 +1094,10 @@ document.getElementById('gh-pull').onclick=async()=>{
     const inc=JSON.parse(content);const tok2=DB.sync.token,gid2=DB.sync.gistId;
     DB=Object.assign(structuredClone(DEFAULT),inc);DB.sync.token=tok2;DB.sync.gistId=gid2;saveNow();
     ghStatus('Pulled \u2713');toast('Synced from Gist');location.reload();
-  }catch(e){ghStatus('Pull failed ('+e.message+')');}
-};
+  }catch(e){ghStatus('Pull failed ('+e.message+')');toast('Pull failed ('+e.message+')');syncing=false;syncBusy('pull',false);}
+}
+document.getElementById('gh-push').onclick=syncPush;
+document.getElementById('gh-pull').onclick=syncPull;
 
 /* ======================= misc ======================= */
 let toastT;function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),1900);}
@@ -1087,6 +1109,22 @@ if(!DB.remSeeded){
   if(!DB.monthlyRem.length)DB.monthlyRem=[{id:uid(),item:'Electricity & water bill',done:false},{id:uid(),item:'Rent',done:false},{id:uid(),item:'Income tax / advance tax',done:false}];
   DB.remSeeded=true;save();
 }
+
+/* ---------- quick sync controls on every page (except Sync) ---------- */
+function goSync(){const b=document.querySelector('.nav button[data-view="sync"]');if(b)b.click();}
+const SEG_BTNS='<button data-sync="push" title="Push to Gist">\u2191</button><button data-sync="pull" title="Pull from Gist">\u2193</button>';
+document.querySelectorAll('.view').forEach(v=>{
+  if(v.id==='view-sync')return;
+  const eb=v.querySelector('.eyebrow');
+  if(eb&&!eb.querySelector('.sync-seg'))eb.insertAdjacentHTML('beforeend','<div class="sync-seg">'+SEG_BTNS+'</div>');
+});
+const syncFab=document.createElement('div');
+syncFab.id='sync-fab';syncFab.className='sync-seg sync-fab';syncFab.innerHTML=SEG_BTNS;
+document.body.appendChild(syncFab);
+function updateSyncFab(){const active=document.querySelector('.view.active');syncFab.classList.toggle('hide',!active||active.id==='view-sync');}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-sync]');if(!b)return;if(b.classList.contains('busy'))return;b.dataset.sync==='push'?syncPush():syncPull();});
+document.getElementById('nav').addEventListener('click',updateSyncFab);
+updateSyncFab();
 
 /* boot */
 renderToday();
