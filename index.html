@@ -254,7 +254,11 @@ hr.soft{border:none;border-top:1px solid var(--line);margin:20px 0}
 .note-list button.active{background:var(--surface);box-shadow:var(--shadow);color:var(--ink);font-weight:500}
 .note-list .nt-title{font-weight:500;display:block;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .note-list .nt-date{font-size:11px;color:var(--faint)}
-.note-edit textarea{min-height:280px;font-family:'Spectral',serif;font-size:15px;line-height:1.6;resize:vertical}
+.note-edit textarea{min-height:110px;font-family:'Spectral',serif;font-size:15px;line-height:1.6;resize:vertical;overflow:hidden}
+.note-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:6px}
+.note-head h2{font-size:20px;flex:1;min-width:0}
+.note-head input{font-family:'Spectral',serif;font-size:18px;border-color:transparent;padding-left:0}
+.preview.read{border-top:none;margin-top:0;padding-top:0}
 .preview{border-top:1px solid var(--line);margin-top:16px;padding-top:16px;font-family:'Spectral',serif;font-size:15px;line-height:1.65}
 .preview h1,.preview h2,.preview h3{margin:14px 0 6px}
 .preview code{font-family:ui-monospace,monospace;background:var(--surface-2);padding:1px 5px;border-radius:4px;font-size:.9em}
@@ -1025,22 +1029,37 @@ document.getElementById('teach-body').addEventListener('click',e=>{
 document.getElementById('teach-add').onclick=()=>{DB.teaching.push({id:uid(),course:'',lec:'',date:ymd(TODAY),time:'09:00',page:(DB.teachPage||0),topic:'',prepDone:false,comments:''});save();renderTeaching();toast('Lecture added \u00b7 also on the Calendar');};
 
 /* ======================= NOTES ======================= */
-let curNote=null;
+let curNote=null,noteEditing=false;
+function autoGrow(el){el.style.height='auto';el.style.height=Math.max(110,el.scrollHeight)+'px';}
 function renderNotes(){
   const list=document.getElementById('note-list');
   const notes=[...DB.notes].sort((a,b)=>(b.updated||0)-(a.updated||0));
   list.innerHTML=notes.map(n=>`<button data-n="${n.id}" class="${n.id===curNote?'active':''}"><span class="nt-title">${esc(n.title||'Untitled')}</span><span class="nt-date">${n.updated?new Date(n.updated).toLocaleDateString():''}</span></button>`).join('')||'<div class="empty">No notes.</div>';
-  list.querySelectorAll('button').forEach(b=>b.onclick=()=>{curNote=b.dataset.n;renderNotes();});
+  list.querySelectorAll('button').forEach(b=>b.onclick=()=>{curNote=b.dataset.n;noteEditing=false;renderNotes();});
   const wrap=document.getElementById('note-edit');
   const n=DB.notes.find(x=>x.id===curNote);
   if(!n){wrap.innerHTML='<div class="empty">Select or create a note. Markdown and $LaTeX$ supported.</div>';return;}
-  wrap.innerHTML=`<input type="text" id="note-title" value="${esc(n.title)}" placeholder="Title" style="font-family:Spectral;font-size:18px;border-color:transparent;padding-left:0;margin-bottom:6px">
+
+  if(!noteEditing){   /* ---- read mode: rendered note only ---- */
+    wrap.innerHTML=`<div class="note-head"><h2>${esc(n.title||'Untitled')}</h2>
+      <div class="btn-row"><button class="btn btn-sm" id="note-editbtn">\u270e Edit</button><button class="del-x" id="note-del">\u00d7</button></div></div>
+      <div class="preview read" id="note-preview"></div>`;
+    document.getElementById('note-editbtn').onclick=()=>{noteEditing=true;renderNotes();};
+    document.getElementById('note-del').onclick=()=>{if(!confirm('Delete this note?'))return;DB.notes=DB.notes.filter(x=>x.id!==n.id);curNote=null;save();renderNotes();toast('Note deleted');};
+    renderPreview(n.body);
+    return;
+  }
+
+  /* ---- edit mode ---- */
+  wrap.innerHTML=`<div class="note-head"><input type="text" id="note-title" value="${esc(n.title)}" placeholder="Title">
+    <button class="btn btn-primary btn-sm" id="note-done">\u2713 Done</button></div>
     <textarea id="note-body" placeholder="Write in Markdown. Inline math: $e^{i\\pi}+1=0$">${esc(n.body)}</textarea>
     <div class="preview" id="note-preview"></div>`;
   const t=document.getElementById('note-title'),b=document.getElementById('note-body');
-  const upd=()=>{n.title=t.value;n.body=b.value;n.updated=Date.now();save();renderPreview(n.body);};
-  t.addEventListener('input',()=>{n.title=t.value;n.updated=Date.now();save();document.querySelector(`[data-n="${n.id}"] .nt-title`).textContent=t.value||'Untitled';});
-  b.addEventListener('input',upd);
+  autoGrow(b);
+  t.addEventListener('input',()=>{n.title=t.value;n.updated=Date.now();save();const s=document.querySelector(`[data-n="${n.id}"] .nt-title`);if(s)s.textContent=t.value||'Untitled';});
+  b.addEventListener('input',()=>{n.body=b.value;n.updated=Date.now();save();autoGrow(b);renderPreview(n.body);});
+  document.getElementById('note-done').onclick=()=>{noteEditing=false;renderNotes();};
   renderPreview(n.body);
 }
 function renderPreview(md){
@@ -1048,7 +1067,7 @@ function renderPreview(md){
   el.innerHTML=window.marked?marked.parse(md||''):esc(md||'');
   if(window.renderMathInElement)try{renderMathInElement(el,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],throwOnError:false});}catch(e){}
 }
-document.getElementById('note-add').onclick=()=>{const n={id:uid(),title:'',body:'',updated:Date.now()};DB.notes.push(n);curNote=n.id;save();renderNotes();setTimeout(()=>document.getElementById('note-title')?.focus(),40);};
+document.getElementById('note-add').onclick=()=>{const n={id:uid(),title:'',body:'',updated:Date.now()};DB.notes.push(n);curNote=n.id;noteEditing=true;save();renderNotes();setTimeout(()=>document.getElementById('note-title')?.focus(),40);};
 
 /* ======================= READING ======================= */
 function renderReading(){
