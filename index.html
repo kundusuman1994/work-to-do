@@ -272,8 +272,25 @@ hr.soft{border:none;border-top:1px solid var(--line);margin:20px 0}
 .review-item.done .rt{text-decoration:line-through;color:var(--faint)}
 .rt{flex:1}
 
-.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:10px 18px;border-radius:8px;font-weight:500;opacity:0;pointer-events:none;transition:.25s;z-index:80;font-size:13px}
+.toast{position:fixed;bottom:76px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:10px 18px;border-radius:8px;font-weight:500;opacity:0;pointer-events:none;transition:.25s;z-index:80;font-size:13px}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ---------- floating push button ---------- */
+.pushfab{
+  position:fixed;left:0;right:0;bottom:22px;margin:0 auto;width:fit-content;
+  display:none;align-items:center;gap:7px;
+  background:var(--surface);color:var(--accent);
+  border:1px solid var(--line-strong);border-radius:100px;
+  padding:7px 15px;font-weight:600;font-size:12.5px;cursor:pointer;
+  box-shadow:0 2px 4px rgba(42,38,32,.06), 0 8px 24px rgba(42,38,32,.10);
+  z-index:70;opacity:0;transform:translateY(10px);
+  transition:opacity .18s ease,transform .18s ease,background .12s;
+}
+.pushfab.show{display:flex;opacity:1;transform:translateY(0)}
+.pushfab:hover{background:var(--surface-2)}
+.pushfab:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.pushfab:disabled{cursor:default;opacity:.6}
+.pushfab .pf-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);flex-shrink:0}
 
 .inline-add{color:var(--accent);cursor:pointer;font-weight:600;font-size:12.5px;padding:8px 2px;display:inline-block}
 .del-x{color:var(--faint);cursor:pointer;border:none;background:none;font-size:15px;padding:2px 6px;border-radius:4px}
@@ -580,11 +597,21 @@ let DB=load();
 function load(){try{const r=JSON.parse(localStorage.getItem(KEY));return r?Object.assign(structuredClone(DEFAULT),r):seed();}catch(e){return seed();}}
 const PUSH_DELAY=8000;              /* idle time after the last edit before an auto-push */
 let saveT,pushT,dirty=false,pulledOk=false;
-function save(){clearTimeout(saveT);saveT=setTimeout(()=>localStorage.setItem(KEY,JSON.stringify(DB)),120);dirty=true;schedulePush();}
+function save(){clearTimeout(saveT);saveT=setTimeout(()=>localStorage.setItem(KEY,JSON.stringify(DB)),120);dirty=true;schedulePush();pushFabSet('pending');}
 /* saveNow() writes without marking the copy dirty — used by pull / import / arXiv cache */
 function saveNow(){clearTimeout(saveT);localStorage.setItem(KEY,JSON.stringify(DB));}
 function schedulePush(){clearTimeout(pushT);pushT=setTimeout(()=>{if(pulledOk&&dirty&&!syncing)syncPush(false);},PUSH_DELAY);}
 function uid(){return Math.random().toString(36).slice(2,9);}
+/* floating push button — a visual read-out of the `dirty` flag */
+function pushFabSet(mode){
+  const f=document.getElementById('push-fab');if(!f)return;
+  const l=document.getElementById('push-fab-label');
+  if(mode==='hide'||!DB.sync.token){f.classList.remove('show');f.disabled=false;return;}
+  if(mode==='pushing'){l.textContent='Pushing\u2026';f.disabled=true;f.classList.add('show');return;}
+  if(mode==='failed'){l.textContent='Push failed \u2014 retry';f.disabled=false;f.classList.add('show');return;}
+  l.textContent=pulledOk?'Push':'Push \u00b7 not synced';
+  f.disabled=false;f.classList.add('show');
+}
 function seed(){
   const d=structuredClone(DEFAULT);
   const t=new Date();const iso=x=>x.toISOString().slice(0,10);
@@ -1154,7 +1181,7 @@ async function syncPush(manual){
     if(!manual)return false;
     if(!confirm('This copy was never pulled from the Gist in this session.\n\nPushing may overwrite newer data from another device. Push anyway?'))return false;
   }
-  syncing=true;ghStatus('Pushing…');
+  syncing=true;ghStatus('Pushing…');pushFabSet('pushing');
   /* arxivCache is a per-device scratch copy — keep it out of the Gist so the poll stays light */
   const safe=Object.assign({},DB,{sync:{token:'',gistId:''},arxivCache:null});
   const payload={description:'Desk data',public:false,files:{'desk-data.json':{content:JSON.stringify(safe)}}};
@@ -1165,13 +1192,13 @@ async function syncPush(manual){
     const j=await res.json();
     DB.sync.gistId=j.id;saveNow();
     const gi=document.getElementById('gh-gist');if(gi)gi.value=j.id;
-    dirty=false;clearTimeout(pushT);
+    dirty=false;clearTimeout(pushT);pushFabSet('hide');
     remoteRev=j.updated_at||remoteRev;   /* we made this revision — don't gate ourselves on it */
     ghStatus('Pushed \u2713 '+new Date().toLocaleTimeString());
     if(manual)toast('Pushed to Gist \u2713');
     return true;
   }catch(e){
-    ghStatus('Push failed ('+e.message+')');toast('Push failed ('+e.message+') \u2014 will retry');
+    ghStatus('Push failed ('+e.message+')');toast('Push failed ('+e.message+') \u2014 will retry');pushFabSet('failed');
     schedulePush();                                  /* keep dirty; try again after the next idle window */
     return false;
   }
@@ -1197,7 +1224,7 @@ async function syncPull(quiet){
     DB.sync.token=tok2;DB.sync.gistId=gid2;
     DB.arxivCache=cache2||inc.arxivCache||null;      /* the arXiv cache is local, not synced */
     saveNow();
-    pulledOk=true;dirty=false;clearTimeout(pushT);   /* fresh copy — nothing pending */
+    pulledOk=true;dirty=false;clearTimeout(pushT);pushFabSet('hide');   /* fresh copy — nothing pending */
     remoteRev=j.updated_at||null;                    /* the revision we are now in step with */
     curNote=null;arxivLoaded=false;
     ghStatus('Pulled \u2713 '+new Date().toLocaleTimeString());
@@ -1212,6 +1239,7 @@ async function syncPull(quiet){
   finally{syncing=false;}
 }
 document.getElementById('gh-push').onclick=()=>syncPush(true);
+document.getElementById('push-fab').onclick=()=>syncPush(true);
 document.getElementById('gh-pull').onclick=()=>syncPull(false);
 
 /* ======================= misc ======================= */
