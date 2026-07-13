@@ -89,6 +89,7 @@ a{color:var(--accent)}
 .gate-btn{width:100%;padding:18px;font-size:20px;font-weight:700;letter-spacing:.08em;border-radius:10px}
 .gate-btn:disabled{opacity:.6;cursor:default}
 .gate-err{color:#a24e30;font-size:12.5px;margin-top:12px;min-height:16px}
+.gate-warn{display:none;background:#F7EACB;color:#7a5c14;border-radius:6px;padding:9px 11px;font-size:12px;line-height:1.45;margin-top:12px;text-align:left}
 
 /* ---------- cards ---------- */
 .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
@@ -542,9 +543,10 @@ hr.soft{border:none;border-top:1px solid var(--line);margin:20px 0}
 <!-- boot sync gate -->
 <div class="modal-bg" id="gate-bg">
   <div class="modal" style="width:400px;text-align:center">
-    <h3 style="margin-bottom:8px">Sync before you start</h3>
-    <p class="muted" style="margin:0 0 20px">Pull the latest copy from the Gist. Editing is safe only once this succeeds.</p>
+    <h3 style="margin-bottom:8px" id="gate-head">Sync before you start</h3>
+    <p class="muted" style="margin:0 0 20px" id="gate-msg">Pull the latest copy from the Gist. Editing is safe only once this succeeds.</p>
     <button class="btn btn-primary gate-btn" id="gate-pull">PULL</button>
+    <div class="gate-warn" id="gate-warn"></div>
     <div class="gate-err" id="gate-err"></div>
     <div id="gate-skip-wrap" style="margin-top:6px;display:none">
       <button class="btn btn-ghost btn-sm" id="gate-skip">Continue without syncing</button>
@@ -1116,7 +1118,9 @@ document.getElementById('imp-file').onchange=e=>{const f=e.target.files[0];if(!f
 document.getElementById('gh-token').addEventListener('input',e=>{DB.sync.token=e.target.value.trim();save();});
 document.getElementById('gh-gist').addEventListener('input',e=>{DB.sync.gistId=e.target.value.trim();save();});
 const ghStatus=m=>{const el=document.getElementById('gh-status');if(el)el.textContent=m;};
+const POLL_MS=60000;          /* how often an idle device checks whether the Gist moved */
 let syncing=false;
+let remoteRev=null;           /* Gist updated_at we are currently in step with */
 
 /* PUSH — manual=true only from the Sync page button.
    Auto-pushes are silently refused while pulledOk is false, so a stale copy
@@ -1130,7 +1134,8 @@ async function syncPush(manual){
     if(!confirm('This copy was never pulled from the Gist in this session.\n\nPushing may overwrite newer data from another device. Push anyway?'))return false;
   }
   syncing=true;ghStatus('Pushing…');
-  const safe=Object.assign({},DB,{sync:{token:'',gistId:''}});
+  /* arxivCache is a per-device scratch copy — keep it out of the Gist so the poll stays light */
+  const safe=Object.assign({},DB,{sync:{token:'',gistId:''},arxivCache:null});
   const payload={description:'Desk data',public:false,files:{'desk-data.json':{content:JSON.stringify(safe)}}};
   try{
     const url='https://api.github.com/gists'+(DB.sync.gistId?'/'+DB.sync.gistId:'');
@@ -1140,6 +1145,7 @@ async function syncPush(manual){
     DB.sync.gistId=j.id;saveNow();
     const gi=document.getElementById('gh-gist');if(gi)gi.value=j.id;
     dirty=false;clearTimeout(pushT);
+    remoteRev=j.updated_at||remoteRev;   /* we made this revision — don't gate ourselves on it */
     ghStatus('Pushed \u2713 '+new Date().toLocaleTimeString());
     if(manual)toast('Pushed to Gist \u2713');
     return true;
@@ -1165,11 +1171,13 @@ async function syncPull(quiet){
     if(!f||!f.content)throw new Error('desk-data.json missing');
     let inc;try{inc=JSON.parse(f.content);}catch(_){throw new Error('corrupt JSON');}
     if(!inc||typeof inc!=='object'||Array.isArray(inc))throw new Error('unexpected data');
-    const tok2=DB.sync.token,gid2=DB.sync.gistId;
+    const tok2=DB.sync.token,gid2=DB.sync.gistId,cache2=DB.arxivCache;
     DB=Object.assign(structuredClone(DEFAULT),inc);
     DB.sync.token=tok2;DB.sync.gistId=gid2;
+    DB.arxivCache=cache2||inc.arxivCache||null;      /* the arXiv cache is local, not synced */
     saveNow();
     pulledOk=true;dirty=false;clearTimeout(pushT);   /* fresh copy — nothing pending */
+    remoteRev=j.updated_at||null;                    /* the revision we are now in step with */
     curNote=null;arxivLoaded=false;
     ghStatus('Pulled \u2713 '+new Date().toLocaleTimeString());
     if(!quiet)toast('Synced from Gist \u2713');
@@ -1199,16 +1207,39 @@ if(!DB.remSeeded){
 /* ---------- boot sync gate ----------
    If this device is set up for sync, nothing is editable until a pull succeeds.
    Pull OK  -> pulledOk = true, auto-push is armed.
-   Pull bad -> retry, or continue with auto-push disabled (Sync page stays available). */
+   Pull bad -> retry, or continue with auto-push disabled (Sync page stays available).
+   The same gate is re-raised on any device whose copy goes stale (see pollRemote). */
 const gateBg=document.getElementById('gate-bg');
 const gateBtn=document.getElementById('gate-pull');
+const gateHead=document.getElementById('gate-head');
+const gateMsg=document.getElementById('gate-msg');
+const gateWarn=document.getElementById('gate-warn');
 const gateErr=document.getElementById('gate-err');
 const gateSkip=document.getElementById('gate-skip-wrap');
+
+function raiseGate(kind){
+  if(gateBg.classList.contains('show'))return;
+  pulledOk=false;clearTimeout(pushT);            /* disarm auto-push immediately — this copy is stale */
+  gateErr.textContent='';
+  if(kind==='stale'){
+    gateHead.textContent='Another device saved changes';
+    gateMsg.textContent='This copy is now out of date. Pull before you carry on editing here.';
+    gateSkip.style.display='block';
+    gateWarn.style.display=dirty?'block':'none';
+    gateWarn.textContent='This device has edits that never reached the Gist. Pulling will discard them \u2014 if you want to keep them instead, close this and push from Sync & backup (it will ask you to confirm).';
+  }else{
+    gateHead.textContent='Sync before you start';
+    gateMsg.textContent='Pull the latest copy from the Gist. Editing is safe only once this succeeds.';
+    gateSkip.style.display='none';
+    gateWarn.style.display='none';
+  }
+  gateBg.classList.add('show');
+}
 gateBtn.onclick=async()=>{
   gateBtn.disabled=true;gateBtn.textContent='PULLING\u2026';gateErr.textContent='';
   const ok=await syncPull(true);
   gateBtn.disabled=false;gateBtn.textContent='PULL';
-  if(ok){gateBg.classList.remove('show');toast('Synced from Gist \u2713');}
+  if(ok){gateBg.classList.remove('show');gateWarn.style.display='none';toast('Synced from Gist \u2713');}
   else{gateErr.textContent='Pull failed. Check the network / token, then try again.';gateSkip.style.display='block';}
 };
 document.getElementById('gate-skip').onclick=()=>{
@@ -1216,12 +1247,34 @@ document.getElementById('gate-skip').onclick=()=>{
   toast('Working offline \u2014 auto-push is off');
 };
 
+/* ---------- stale-copy detection ----------
+   Every synced device checks the Gist's updated_at once a minute. The device that
+   pushed already recorded that revision, so it stays quiet; every *other* open
+   device sees a new revision and raises the PULL gate. */
+async function pollRemote(){
+  if(syncing||document.hidden)return;
+  if(gateBg.classList.contains('show'))return;
+  const tok=DB.sync.token,gid=DB.sync.gistId;
+  if(!tok||!gid||!remoteRev)return;               /* not set up, or never pulled — gate handles that */
+  try{
+    const res=await fetch('https://api.github.com/gists/'+gid,{cache:'no-store',headers:{Authorization:'Bearer '+tok,Accept:'application/vnd.github+json'}});
+    if(!res.ok)return;                            /* network blip — say nothing, try again next tick */
+    const j=await res.json();
+    if(j.updated_at&&j.updated_at!==remoteRev)raiseGate('stale');
+  }catch(e){/* offline — ignore */}
+}
+setInterval(pollRemote,POLL_MS);
+
 /* ---------- auto-push safety net ----------
    Edits are already safe in localStorage, but an edit made seconds before the tab
    closes would never reach the Gist — and the next boot pull would overwrite it.
    So: flush on backgrounding, and warn if a push is still pending on unload. */
 document.addEventListener('visibilitychange',()=>{
-  if(document.hidden&&pulledOk&&dirty&&!syncing)syncPush(false);
+  if(document.hidden){
+    if(pulledOk&&dirty&&!syncing)syncPush(false);   /* flush before the tab goes away */
+  }else{
+    pollRemote();                                   /* coming back: is this copy still current? */
+  }
 });
 window.addEventListener('beforeunload',e=>{
   if(pulledOk&&dirty){e.preventDefault();e.returnValue='';}
