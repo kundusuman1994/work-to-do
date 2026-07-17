@@ -2,12 +2,16 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <title>Desk — research &amp; teaching</title>
 
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon.png" sizes="512x512">
 <link rel="apple-touch-icon" href="icon.png">
+<meta name="theme-color" content="#F4F1EA">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -302,6 +306,36 @@ hr.soft{border:none;border-top:1px solid var(--line);margin:20px 0}
   .sidebar-foot{display:none}.brand{padding-bottom:0}
   .nav{flex-direction:row;flex-wrap:wrap}
   .main{padding:22px 18px 60px}
+}
+
+/* ---------- month calendar: less cramped on phones ---------- */
+@media(max-width:720px){
+  .cal-cell{min-height:64px;padding:4px}
+  .cal-dow{padding:5px 2px;font-size:10px}
+  .dnum{min-width:18px;height:18px;font-size:11px}
+  .ev{font-size:10px;padding:1px 4px}
+  .cal-title{min-width:0;font-size:17px}
+  .cal-toolbar{gap:8px}
+}
+
+/* ---------- touch devices (iPhone Safari etc.) — desktop untouched ---------- */
+@media(hover:none){
+  /* iOS auto-zooms on focus for any field under 16px; bump fields to 16px */
+  input[type=text],input[type=date],input[type=datetime-local],input[type=number],textarea,select{font-size:16px}
+  .pct-cell input,.pct-wrap input{font-size:16px;width:52px}
+  /* the +/- percent steppers are hover-revealed — unreachable by touch, so show them */
+  .pct-step{display:flex}
+  .pct-step button{font-size:12px;height:16px;padding:0 5px}
+  /* keep the floating push button and toasts clear of the home indicator */
+  .pushfab{bottom:calc(22px + env(safe-area-inset-bottom))}
+  .toast{bottom:calc(76px + env(safe-area-inset-bottom))}
+  .main{padding-bottom:calc(70px + env(safe-area-inset-bottom))}
+  /* dynamic viewport height so the sync gate / modals don't hide behind the address bar */
+  .app{min-height:100dvh}
+  .modal{max-height:90dvh}
+  /* comfortable nav tap targets */
+  .nav button{min-height:44px}
+  body{-webkit-text-size-adjust:100%}
 }
 </style>
 </head>
