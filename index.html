@@ -301,11 +301,11 @@ hr.soft{border:none;border-top:1px solid var(--line);margin:20px 0}
 .del-x:hover{color:var(--red);background:var(--surface-2)}
 
 @media(max-width:720px){
-  .app{grid-template-columns:1fr}
+  .app{grid-template-columns:1fr;min-width:0;overflow-x:hidden}
   .sidebar{position:static;height:auto;flex-direction:row;flex-wrap:wrap;align-items:center}
   .sidebar-foot{display:none}.brand{padding-bottom:0}
   .nav{flex-direction:row;flex-wrap:wrap}
-  .main{padding:22px 18px 60px}
+  .main{padding:22px 18px 60px;min-width:0;max-width:100%}
 }
 
 /* ---------- month calendar: less cramped on phones ---------- */
