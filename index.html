@@ -1055,6 +1055,17 @@ function renderResGantt(){
 const ARXIV_FEED='https://rss.arxiv.org/rss/hep-th';
 let arxivLoaded=false;
 function axClean(s){return(s||'').replace(/<[^>]+>/g,'').replace(/\s+/g,' ').trim();}
+/* arXiv announces at 20:00 US Eastern and rebuilds the feed at midnight ET,
+   so the "current" announcement day is the calendar date in New York. */
+function axEasternYMD(d){
+  try{return new Intl.DateTimeFormat('en-CA',{timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit'}).format(d||new Date());}
+  catch(e){return ymd(d||new Date());}
+}
+const DAY3=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+function axDateLabel(y){if(!y)return'';const d=parseYMD(y);return DAY3[d.getDay()]+' '+d.getDate()+' '+MON3[d.getMonth()];}
+/* direct children only — getElementsByTagName would also match the items' own pubDate */
+function axChannelTag(chan,tag){if(!chan)return'';for(const n of chan.children){if(n.nodeName===tag)return n.textContent;}return'';}
+
 /* paint a list of parsed items + wire the Reading checkboxes and any retry link */
 function axPaint(items,headHTML){
   const el=document.getElementById('arxiv-list');if(!el)return;
@@ -1076,32 +1087,55 @@ function axPaint(items,headHTML){
     }
   }));
 }
-function axCacheHead(note){
-  const c=DB.arxivCache||{};
-  return `<div class="ax-head"><span>${c.items?c.items.length:0} papers &middot; last announcement</span><span class="faint">${esc(note)}${c.label?' &middot; '+esc(c.label):''} &middot; <a href="#" id="ax-retry">refresh</a></span></div>`;
+/* one header for every path — it always states the announcement date the list
+   actually came from, never today's date by assumption */
+function axHead(n,feedYMD,note){
+  const fresh=!!feedYMD&&feedYMD===axEasternYMD();
+  const when=feedYMD?(fresh?'today &middot; '+axDateLabel(feedYMD):'announced '+axDateLabel(feedYMD)):'date unknown';
+  const lead=fresh?`${n} new submission${n===1?'':'s'}`:`${n} paper${n===1?'':'s'} &middot; last announcement`;
+  const bits=[];
+  if(note)bits.push(esc(note));
+  if(fresh)bits.push('tick to add to Reading');
+  bits.push(when);
+  return `<div class="ax-head"${fresh?'':' style="color:#9a6b2f"'}><span>${lead}</span><span class="faint">${bits.join(' &middot; ')} &middot; <a href="#" id="ax-retry">refresh</a></span></div>`;
 }
 async function loadArxiv(force){
   const el=document.getElementById('arxiv-list');if(!el)return;
   el.innerHTML='<div class="empty" style="padding:16px">Loading today\u2019s hep-th list\u2026</div>';
   const cache=DB.arxivCache;
   const hasCache=!!(cache&&cache.items&&cache.items.length);
-  const proxies=[u=>u,u=>'https://api.allorigins.win/raw?url='+encodeURIComponent(u),u=>'https://corsproxy.io/?url='+encodeURIComponent(u)];
+  /* only trust ymd from caches this version wrote — older ones stored the local
+     save date, which could block a legitimate refresh */
+  const cacheYMD=(hasCache&&cache.v===2)?(cache.ymd||''):'';
+  /* the timestamp defeats the CORS proxies' own caches, which otherwise hand
+     back a copy that is days old; no-store defeats the browser's */
+  const url=ARXIV_FEED+'?_='+Date.now();
+  const proxies=[u=>u,
+                 u=>'https://api.allorigins.win/raw?url='+encodeURIComponent(u),
+                 u=>'https://corsproxy.io/?url='+encodeURIComponent(u),
+                 u=>'https://api.codetabs.com/v1/proxy?quest='+encodeURIComponent(u)];
   let xml=null;
   for(const p of proxies){
-    try{const res=await fetch(p(ARXIV_FEED),{cache:force?'reload':'default'});if(!res.ok)continue;const t=await res.text();if(t&&t.indexOf('<item')>-1){xml=t;break;}}catch(e){}
+    try{const res=await fetch(p(url),{cache:'no-store'});if(!res.ok)continue;const t=await res.text();if(t&&t.indexOf('<item')>-1){xml=t;break;}}catch(e){}
   }
   /* feed unreachable — fall back to the last good list */
   if(!xml){
-    if(hasCache){axPaint(cache.items,axCacheHead('couldn\u2019t reach arXiv'));arxivLoaded=true;return;}
+    if(hasCache){axPaint(cache.items,axHead(cache.items.length,cacheYMD,'couldn\u2019t reach arXiv'));arxivLoaded=true;return;}
     el.innerHTML='<div class="empty" style="padding:16px">Couldn\u2019t reach arXiv right now. <a href="#" id="ax-retry">Try again</a>, or open <a href="https://arxiv.org/list/hep-th/new" target="_blank" rel="noopener">the list</a> directly.</div>';
     const r=document.getElementById('ax-retry');if(r)r.onclick=e=>{e.preventDefault();loadArxiv(true);};return;
   }
   let xdoc;try{xdoc=new DOMParser().parseFromString(xml,'application/xml');}catch(e){
-    if(hasCache){axPaint(cache.items,axCacheHead('feed unreadable'));arxivLoaded=true;return;}
+    if(hasCache){axPaint(cache.items,axHead(cache.items.length,cacheYMD,'feed unreadable'));arxivLoaded=true;return;}
     el.innerHTML='<div class="empty" style="padding:16px">Could not parse the feed.</div>';return;
   }
   const raw=[...xdoc.getElementsByTagName('item')];
   const get=(it,tag)=>{const n=it.getElementsByTagName(tag)[0];return n?n.textContent:'';};
+  /* the announcement date the feed itself declares — this, not the clock, is
+     what the list is dated by */
+  const chan=xdoc.getElementsByTagName('channel')[0];
+  const pd=axChannelTag(chan,'pubDate')||axChannelTag(chan,'lastBuildDate');
+  let feedYMD='';
+  if(pd){const d=new Date(pd);if(!isNaN(d))feedYMD=axEasternYMD(d);}
   const items=raw.filter(it=>{
     const type=get(it,'arxiv:announce_type')||(get(it,'description').match(/Announce Type:\s*([a-z-]+)/i)||[])[1]||'';
     return type.trim().toLowerCase()==='new';
@@ -1113,15 +1147,19 @@ async function loadArxiv(force){
     const id=(link.match(/abs\/([^\s?#]+)/)||[])[1]||'';
     return {title,link,authors,abs,id,key:id||link};
   });
-  /* weekend / holiday — nothing announced today, so show the last good list */
+  /* weekend / holiday — nothing announced, so show the last good list, dated honestly */
   if(!items.length){
-    if(hasCache){axPaint(cache.items,axCacheHead('no announcement today'));arxivLoaded=true;return;}
-    el.innerHTML='<div class="empty" style="padding:16px">No new hep-th submissions in today\u2019s feed.</div>';return;
+    if(hasCache){axPaint(cache.items,axHead(cache.items.length,cacheYMD,'no announcement today'));arxivLoaded=true;return;}
+    el.innerHTML='<div class="empty" style="padding:16px">No new hep-th submissions in the current feed.</div>';return;
+  }
+  /* a proxy handed back something older than what we already hold — keep ours */
+  if(cacheYMD&&feedYMD&&feedYMD<cacheYMD){
+    axPaint(cache.items,axHead(cache.items.length,cacheYMD,'feed served a stale copy'));arxivLoaded=true;return;
   }
   /* good list — cache it (saveNow: this is not a user edit, so it must not trigger a push) */
-  DB.arxivCache={label:new Date().toLocaleDateString(),ymd:ymd(new Date()),items};
+  DB.arxivCache={v:2,label:axDateLabel(feedYMD),ymd:feedYMD,items};
   saveNow();
-  axPaint(items,`<div class="ax-head"><span>${items.length} new submissions</span><span class="faint">tick to add to Reading &middot; ${new Date().toLocaleDateString()}</span></div>`);
+  axPaint(items,axHead(items.length,feedYMD,''));
   arxivLoaded=true;
 }
 const axBtn=document.getElementById('arxiv-refresh');if(axBtn)axBtn.onclick=()=>loadArxiv(true);
