@@ -1051,19 +1051,19 @@ function renderResGantt(){
   el.innerHTML=head+bars+'</div>';
 }
 
-/* ---- arXiv hep-th new list — official API, fetched directly ----
-   export.arxiv.org returns Access-Control-Allow-Origin: *, so the browser can
-   read it from this origin with no CORS proxy in the way. Nothing here depends
-   on a third-party service that can quietly rate-limit or disappear. */
-const ARXIV_API='https://export.arxiv.org/api/query';
-const ARXIV_Q='search_query=cat:hep-th&start=0&max_results=250&sortBy=submittedDate&sortOrder=descending';
+/* ---- arXiv hep-th new list — read from this site's own hep-th.json ----
+   The listing is built server-side by .github/workflows/update-arxiv.yml, on a
+   runner where CORS does not apply, and committed into the repo. The page only
+   ever fetches from its own origin, so there is no proxy, no third-party
+   service and nothing that can quietly start refusing requests. */
+const ARXIV_JSON='./hep-th.json';
 let arxivLoaded=false;
 function axClean(s){return(s||'').replace(/<[^>]+>/g,'').replace(/\s+/g,' ').trim();}
 
-/* --- Eastern-time calendar helpers ---------------------------------------
-   arXiv's whole schedule runs on Eastern time: submissions close at 14:00 ET
-   and the batch goes public at 20:00 ET, so every date below is ET wall clock,
-   never the local clock. */
+/* --- Eastern-time helpers ------------------------------------------------
+   Only one question is left on this side: is the listing we have the one that
+   should be on screen right now? arXiv's day rolls over on Eastern time, so
+   that comparison has to be made in ET, never on the local clock. */
 function axET(d){
   try{
     const o={};
@@ -1077,33 +1077,21 @@ function axET(d){
 function axCal(y,m,d){return new Date(Date.UTC(y,m-1,d));}
 function axAdd(c,n){return new Date(c.getTime()+n*864e5);}
 function axCalYMD(c){const p=n=>String(n).padStart(2,'0');return c.getUTCFullYear()+'-'+p(c.getUTCMonth()+1)+'-'+p(c.getUTCDate());}
-function axFwdWeekday(c){while(c.getUTCDay()===0||c.getUTCDay()===6)c=axAdd(c,1);return c;}
-/* arXiv announcement schedule, all Eastern:
-     Mon 14:00–Tue 14:00 -> announced Tue 20:00     Tue 14:00–Wed 14:00 -> Wed 20:00
-     Wed 14:00–Thu 14:00 -> Thu 20:00               Thu 14:00–Fri 14:00 -> Sun 20:00
-     Fri 14:00–Mon 14:00 -> Mon 20:00               (no Friday or Saturday night)
-   a batch released at 20:00 carries the following day's listing date, which is
-   what this returns for a given submission instant. */
-function axListingDay(t){
-  const e=axET(t);
-  let cut=axCal(e.y,e.m,e.d);
-  if(e.H>=14)cut=axAdd(cut,1);      /* past today's 14:00 close -> next cutoff */
-  cut=axFwdWeekday(cut);            /* cutoffs only ever fall Mon–Fri */
-  return axCalYMD(axFwdWeekday(axAdd(cut,1)));  /* a Friday cutoff lists Monday */
-}
-/* the listing that should be on screen at this moment */
+/* the listing that should be on screen at this moment: arXiv releases a batch
+   at 20:00 ET, which carries the next day's date, and there is no Friday or
+   Saturday night release, so at a weekend the newest listing is Friday's */
 function axCurrentListing(){
   const e=axET(new Date());
   let l=axCal(e.y,e.m,e.d);
-  if(e.H>=20)l=axAdd(l,1);          /* tonight's 20:00 batch is tomorrow's listing */
-  while(l.getUTCDay()===0||l.getUTCDay()===6)l=axAdd(l,-1);  /* weekend: the last listing was Friday's */
+  if(e.H>=20)l=axAdd(l,1);
+  while(l.getUTCDay()===0||l.getUTCDay()===6)l=axAdd(l,-1);
   return axCalYMD(l);
 }
 const DAY3=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 function axDateLabel(y){if(!y)return'';const d=parseYMD(y);return DAY3[d.getDay()]+' '+d.getDate()+' '+MON3[d.getMonth()];}
 function axAgeDays(y){if(!y)return 0;return Math.round((parseYMD(axCurrentListing())-parseYMD(y))/864e5);}
 
-/* paint a list of parsed items + wire the Reading checkboxes and any retry link */
+/* paint a list of items + wire the Reading checkboxes and any retry link */
 function axPaint(items,headHTML){
   const el=document.getElementById('arxiv-list');if(!el)return;
   const rows=items.map(it=>{
@@ -1124,8 +1112,8 @@ function axPaint(items,headHTML){
     }
   }));
 }
-/* one header for every path — it always states the listing the papers actually
-   came from, and says out loud how old that listing is */
+/* one header for every path — it states the listing the papers actually came
+   from, and says out loud how old that listing is */
 function axHead(n,listYMD,note){
   const fresh=!!listYMD&&listYMD===axCurrentListing();
   const bits=[];
@@ -1137,78 +1125,48 @@ function axHead(n,listYMD,note){
   const lead=fresh?`${n} new submission${n===1?'':'s'}`:`${n} paper${n===1?'':'s'} &middot; last listing`;
   return `<div class="ax-head"${fresh?'':' style="color:#9a6b2f"'}><span>${lead}</span><span class="faint">${bits.join(' &middot; ')} &middot; <a href="#" id="ax-retry">refresh</a></span></div>`;
 }
-/* the API occasionally answers the first call with an empty feed — one retry */
-async function axFetch(){
-  for(let i=0;i<2;i++){
-    try{
-      const res=await fetch(ARXIV_API+'?'+ARXIV_Q+'&_='+Date.now(),{cache:'no-store'});
-      if(res.ok){const t=await res.text();if(t&&t.indexOf('<entry')>-1)return t;}
-    }catch(e){}
-    if(i===0)await new Promise(r=>setTimeout(r,1200));
-  }
-  return null;
-}
 async function loadArxiv(force){
   const el=document.getElementById('arxiv-list');if(!el)return;
   const cache=DB.arxivCache;
   const hasCache=!!(cache&&cache.items&&cache.items.length);
-  /* only trust ymd from caches this version wrote — older ones stored the local
-     save date, which is not an arXiv listing date at all */
-  const cacheYMD=(hasCache&&cache.v===3)?(cache.ymd||''):'';
+  /* only trust ymd from caches this version wrote — earlier ones stored dates
+     that were not arXiv listing dates at all */
+  const cacheYMD=(hasCache&&cache.v===4)?(cache.ymd||''):'';
   /* a listing never changes once it is out, so a cache of the current listing
      is already the right answer — go to the network only when it isn't, or when
-     the user explicitly asks */
+     the user asks with Refresh */
   if(!force&&cacheYMD&&cacheYMD===axCurrentListing()){
     axPaint(cache.items,axHead(cache.items.length,cacheYMD,''));arxivLoaded=true;return;
   }
   el.innerHTML='<div class="empty" style="padding:16px">Loading the current hep-th listing\u2026</div>';
-  const xml=await axFetch();
-  if(!xml){
-    if(hasCache){axPaint(cache.items,axHead(cache.items.length,cacheYMD,'couldn\u2019t reach arXiv'));arxivLoaded=true;return;}
-    el.innerHTML='<div class="empty" style="padding:16px">Couldn\u2019t reach arXiv right now. <a href="#" id="ax-retry">Try again</a>, or open <a href="https://arxiv.org/list/hep-th/new" target="_blank" rel="noopener">the list</a> directly.</div>';
+  /* the timestamp defeats the Pages CDN, which would otherwise keep serving the
+     copy it cached before the workflow last committed */
+  let data=null,failed='';
+  try{
+    const res=await fetch(ARXIV_JSON+'?_='+Date.now(),{cache:'no-store'});
+    if(res.ok)data=await res.json();
+    else failed=res.status===404?'hep-th.json not published yet':'listing file unavailable';
+  }catch(e){failed='listing file unreadable';}
+  const raw=(data&&Array.isArray(data.items))?data.items.filter(x=>x&&x.id&&x.title):[];
+  if(!raw.length){
+    const note=failed||'listing file was empty';
+    if(hasCache){axPaint(cache.items,axHead(cache.items.length,cacheYMD,note));arxivLoaded=true;return;}
+    el.innerHTML='<div class="empty" style="padding:16px">'+esc(note)+'. <a href="#" id="ax-retry">Try again</a>, or open <a href="https://arxiv.org/list/hep-th/new" target="_blank" rel="noopener">the list</a> directly.</div>';
     const r=document.getElementById('ax-retry');if(r)r.onclick=e=>{e.preventDefault();loadArxiv(true);};return;
   }
-  /* DOMParser never throws on bad XML — it hands back a <parsererror> document,
-     so the failure has to be looked for explicitly */
-  const xdoc=new DOMParser().parseFromString(xml,'application/xml');
-  if(xdoc.getElementsByTagName('parsererror').length){
-    if(hasCache){axPaint(cache.items,axHead(cache.items.length,cacheYMD,'feed unreadable'));arxivLoaded=true;return;}
-    el.innerHTML='<div class="empty" style="padding:16px">Could not parse the arXiv response.</div>';return;
+  const items=raw.map(x=>{
+    let abs=axClean(x.abstract||'');if(abs.length>340)abs=abs.slice(0,340)+'\u2026';
+    return {title:axClean(x.title),link:x.link||('https://arxiv.org/abs/'+x.id),
+            authors:axClean(x.authors||''),abs,id:x.id,key:x.key||x.id};
+  });
+  const listing=data.listing||'';
+  /* the file went backwards — a bad deploy or a rolled-back commit — keep ours */
+  if(cacheYMD&&listing&&listing<cacheYMD){
+    axPaint(cache.items,axHead(cache.items.length,cacheYMD,'published listing is older than the cached one'));arxivLoaded=true;return;
   }
-  const txt=(p,tag)=>{const n=p.getElementsByTagName(tag)[0];return n?n.textContent:'';};
-  const all=[...xdoc.getElementsByTagName('entry')].map(en=>{
-    /* strip the version suffix so keys match Reading rows saved from the old feed */
-    const id=((txt(en,'id').match(/abs\/(.+)$/)||[])[1]||'').replace(/v\d+$/,'');
-    const authors=[...en.getElementsByTagName('author')].map(a=>axClean(txt(a,'name'))).filter(Boolean).join(', ');
-    let abs=axClean(txt(en,'summary'));if(abs.length>340)abs=abs.slice(0,340)+'\u2026';
-    const pc=en.getElementsByTagName('arxiv:primary_category')[0]||en.getElementsByTagNameNS('http://arxiv.org/schemas/atom','primary_category')[0];
-    const pub=new Date(txt(en,'published'));
-    return {title:axClean(txt(en,'title')),link:id?'https://arxiv.org/abs/'+id:'#',authors,abs,id,key:id,
-            prim:pc?(pc.getAttribute('term')||''):'',day:isNaN(pub)?'':axListingDay(pub)};
-  }).filter(x=>x.id&&x.day);
-  /* primary category hep-th only — that is what excludes cross-lists. If the
-     field is missing everywhere, keep the papers and say so rather than
-     silently emptying the list. */
-  const anyPrim=all.some(x=>x.prim);
-  const pool=anyPrim?all.filter(x=>x.prim==='hep-th'):all;
-  if(!pool.length){
-    if(hasCache){axPaint(cache.items,axHead(cache.items.length,cacheYMD,'arXiv returned nothing usable'));arxivLoaded=true;return;}
-    el.innerHTML='<div class="empty" style="padding:16px">arXiv returned no hep-th submissions.</div>';return;
-  }
-  /* sortBy=submittedDate keys on the v1 date, so replacements never float to the
-     top; the newest listing day present is the current batch */
-  const newest=pool.reduce((a,x)=>x.day>a?x.day:a,'');
-  const items=pool.filter(x=>x.day===newest).map(x=>({title:x.title,link:x.link,authors:x.authors,abs:x.abs,id:x.id,key:x.key}));
-  /* arXiv handed back something older than what we already hold — keep ours */
-  if(cacheYMD&&newest<cacheYMD){
-    axPaint(cache.items,axHead(cache.items.length,cacheYMD,'arXiv served an older listing'));arxivLoaded=true;return;
-  }
-  const notes=[];
-  if(!anyPrim)notes.push('cross-lists not filtered');
-  if(items.length===pool.length)notes.push('list may be truncated');
-  DB.arxivCache={v:3,label:axDateLabel(newest),ymd:newest,items};
+  DB.arxivCache={v:4,label:axDateLabel(listing),ymd:listing,items};
   saveNow();
-  axPaint(items,axHead(items.length,newest,notes.join(' &middot; ')));
+  axPaint(items,axHead(items.length,listing,data.source==='listing-page'?'via the listing page':''));
   arxivLoaded=true;
 }
 const axBtn=document.getElementById('arxiv-refresh');if(axBtn)axBtn.onclick=()=>loadArxiv(true);
