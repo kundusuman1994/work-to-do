@@ -454,7 +454,7 @@ hr.soft{border:none;border-top:1px solid var(--line);margin:20px 0}
       <h3 style="margin:26px 0 0;font-size:16px">Timeline</h3>
       <div class="gantt" id="res-gantt"></div>
 
-      <h3 style="margin:30px 0 0;font-size:16px;display:flex;justify-content:space-between;align-items:center">New on arXiv &middot; hep-th <button class="btn btn-sm" id="arxiv-refresh">Refresh</button></h3>
+      <h3 style="margin:30px 0 0;font-size:16px;display:flex;justify-content:space-between;align-items:center">New on arXiv &middot; hep-th <span style="display:flex;gap:8px"><button class="btn btn-sm" id="arxiv-speak" title="Read the first paper aloud">&#9654; Play</button><button class="btn btn-sm" id="arxiv-refresh">Refresh</button></span></h3>
       <p class="muted" style="margin:2px 0 0">Today&rsquo;s new submissions only — cross-lists and replacements excluded.</p>
       <div id="arxiv-list" class="card" style="margin-top:12px"></div>
     </section>
@@ -1091,12 +1091,129 @@ const DAY3=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 function axDateLabel(y){if(!y)return'';const d=parseYMD(y);return DAY3[d.getDay()]+' '+d.getDate()+' '+MON3[d.getMonth()];}
 function axAgeDays(y){if(!y)return 0;return Math.round((parseYMD(axCurrentListing())-parseYMD(y))/864e5);}
 
+/* --- TeX in titles and abstracts -----------------------------------------
+   arXiv sends raw TeX. Rather than pull in MathJax, the common constructs are
+   mapped to Unicode locally: no CDN, no extra request, app stays single-file.
+   A title that is a genuine equation will read approximately, not perfectly. */
+const TEX_CAL={A:'\u{1D49C}',B:'\u212C',C:'\u{1D49E}',D:'\u{1D49F}',E:'\u2130',F:'\u2131',G:'\u{1D4A2}',H:'\u210B',I:'\u2110',J:'\u{1D4A5}',K:'\u{1D4A6}',L:'\u2112',M:'\u2133',N:'\u{1D4A9}',O:'\u{1D4AA}',P:'\u{1D4AB}',Q:'\u{1D4AC}',R:'\u211B',S:'\u{1D4AE}',T:'\u{1D4AF}',U:'\u{1D4B0}',V:'\u{1D4B1}',W:'\u{1D4B2}',X:'\u{1D4B3}',Y:'\u{1D4B4}',Z:'\u{1D4B5}'};
+const TEX_BB={A:'\u{1D538}',B:'\u{1D539}',C:'\u2102',D:'\u{1D53B}',E:'\u{1D53C}',F:'\u{1D53D}',G:'\u{1D53E}',H:'\u210D',I:'\u{1D540}',J:'\u{1D541}',K:'\u{1D542}',L:'\u{1D543}',M:'\u{1D544}',N:'\u2115',O:'\u{1D546}',P:'\u2119',Q:'\u211A',R:'\u211D',S:'\u{1D54A}',T:'\u{1D54B}',U:'\u{1D54C}',V:'\u{1D54D}',W:'\u{1D54E}',X:'\u{1D54F}',Y:'\u{1D550}',Z:'\u2124'};
+const TEX_SYM={alpha:'\u03B1',beta:'\u03B2',gamma:'\u03B3',delta:'\u03B4',epsilon:'\u03B5',varepsilon:'\u03B5',zeta:'\u03B6',eta:'\u03B7',theta:'\u03B8',vartheta:'\u03D1',iota:'\u03B9',kappa:'\u03BA',lambda:'\u03BB',mu:'\u03BC',nu:'\u03BD',xi:'\u03BE',pi:'\u03C0',rho:'\u03C1',sigma:'\u03C3',tau:'\u03C4',upsilon:'\u03C5',phi:'\u03C6',varphi:'\u03C6',chi:'\u03C7',psi:'\u03C8',omega:'\u03C9',
+Gamma:'\u0393',Delta:'\u0394',Theta:'\u0398',Lambda:'\u039B',Xi:'\u039E',Pi:'\u03A0',Sigma:'\u03A3',Upsilon:'\u03A5',Phi:'\u03A6',Psi:'\u03A8',Omega:'\u03A9',
+to:'\u2192',rightarrow:'\u2192',longrightarrow:'\u27F6',leftarrow:'\u2190',leftrightarrow:'\u2194',Rightarrow:'\u21D2',mapsto:'\u21A6',
+times:'\u00D7',cdot:'\u22C5',cdots:'\u22EF',ldots:'\u2026',dots:'\u2026',pm:'\u00B1',mp:'\u2213',ast:'\u2217',star:'\u22C6',circ:'\u2218',
+approx:'\u2248',sim:'\u223C',simeq:'\u2243',equiv:'\u2261',cong:'\u2245',propto:'\u221D',neq:'\u2260',ne:'\u2260',leq:'\u2264',le:'\u2264',geq:'\u2265',ge:'\u2265',ll:'\u226A',gg:'\u226B',
+infty:'\u221E',partial:'\u2202',nabla:'\u2207',hbar:'\u210F',ell:'\u2113',prime:'\u2032',dagger:'\u2020',
+oplus:'\u2295',otimes:'\u2297',odot:'\u2299',wedge:'\u2227',vee:'\u2228',cup:'\u222A',cap:'\u2229',setminus:'\u2216',
+in:'\u2208',notin:'\u2209',subset:'\u2282',subseteq:'\u2286',supset:'\u2283',forall:'\u2200',exists:'\u2203',
+langle:'\u27E8',rangle:'\u27E9',lvert:'|',rvert:'|',perp:'\u22A5',parallel:'\u2225',
+int:'\u222B',oint:'\u222E',sum:'\u2211',prod:'\u220F',sqrt:'\u221A',deg:'\u00B0',
+bar:'',hat:'',tilde:'',vec:'',dot:'',
+mathcal:'',mathbb:'',mathrm:'',mathbf:'',mathit:'',mathsf:'',text:'',textrm:'',rm:'',it:'',bf:'',displaystyle:'',nonumber:'',quad:' ',qquad:'  '};
+const SUP={'0':'\u2070','1':'\u00B9','2':'\u00B2','3':'\u00B3','4':'\u2074','5':'\u2075','6':'\u2076','7':'\u2077','8':'\u2078','9':'\u2079','+':'\u207A','-':'\u207B','=':'\u207C','(':'\u207D',')':'\u207E',n:'\u207F',i:'\u2071',a:'\u1D43',b:'\u1D47',c:'\u1D9C',d:'\u1D48',e:'\u1D49',f:'\u1DA0',g:'\u1D4D',h:'\u02B0',j:'\u02B2',k:'\u1D4F',l:'\u02E1',m:'\u1D50',o:'\u1D52',p:'\u1D56',r:'\u02B3',s:'\u02E2',t:'\u1D57',u:'\u1D58',v:'\u1D5B',w:'\u02B7',x:'\u02E3',y:'\u02B8',z:'\u1DBB',' ':' '};
+const SUB={'0':'\u2080','1':'\u2081','2':'\u2082','3':'\u2083','4':'\u2084','5':'\u2085','6':'\u2086','7':'\u2087','8':'\u2088','9':'\u2089','+':'\u208A','-':'\u208B','=':'\u208C','(':'\u208D',')':'\u208E',a:'\u2090',e:'\u2091',h:'\u2095',i:'\u1D62',j:'\u2C7C',k:'\u2096',l:'\u2097',m:'\u2098',n:'\u2099',o:'\u2092',p:'\u209A',r:'\u1D63',s:'\u209B',t:'\u209C',u:'\u1D64',v:'\u1D65',x:'\u2093',' ':' '};
+
+/* a run of characters becomes a real super/subscript only if every character
+   has a Unicode form — otherwise it is left readable as ^(...) */
+function axScript(body,map,mark){
+  const out=[];
+  for(const ch of body){const v=map[ch];if(v===undefined)return mark+(body.length>1?'('+body+')':body);out.push(v);}
+  return out.join('');
+}
+function axTex(s){
+  let t=String(s==null?'':s);
+  if(!/[\\${}^_]/.test(t))return t;                    /* nothing to do */
+  t=t.replace(/\$+/g,'');                              /* drop math delimiters */
+  t=t.replace(/\\(?:left|right|big|Big|bigg|Bigg)\b\s*/g,'');
+  t=t.replace(/\\(?:mathcal|mathscr)\s*\{([A-Z])\}/g,(m,c)=>TEX_CAL[c]||c);
+  t=t.replace(/\\(?:mathbb|Bbb)\s*\{([A-Z])\}/g,(m,c)=>TEX_BB[c]||c);
+  t=t.replace(/\\(?:mathrm|mathbf|mathit|mathsf|text|textrm|textbf|operatorname)\s*\{([^{}]*)\}/g,'$1');
+  t=t.replace(/\\(?:bar|hat|tilde|vec|dot|overline|widetilde|widehat)\s*\{([^{}]*)\}/g,'$1');
+  t=t.replace(/\\(?:frac|tfrac|dfrac)\s*\{([^{}]*)\}\s*\{([^{}]*)\}/g,(m,a,b)=>{
+    const bare=x=>/^[\w.\u0370-\u03FF]+$/.test(x);          /* 1/16, not (a+b)/(c) */
+    return (bare(a)&&bare(b))?a+'/'+b:'('+a+')/('+b+')';
+  });
+  t=t.replace(/\\sqrt\s*\{([^{}]*)\}/g,'\u221A($1)');
+  t=t.replace(/\\([A-Za-z]+)/g,(m,w)=>TEX_SYM[w]!==undefined?TEX_SYM[w]:w);
+  t=t.replace(/\^\{([^{}]*)\}/g,(m,b)=>axScript(b,SUP,'^'));
+  t=t.replace(/\^(\\?\S)/g,(m,b)=>axScript(b,SUP,'^'));
+  t=t.replace(/_\{([^{}]*)\}/g,(m,b)=>axScript(b,SUB,'_'));
+  t=t.replace(/_(\\?\S)/g,(m,b)=>axScript(b,SUB,'_'));
+  t=t.replace(/[{}]/g,'');
+  return t.replace(/~/g,' ').replace(/\s+/g,' ').trim();
+}
+/* for speech, symbols read badly — say the words instead. Greek names are left
+   alone because "lambda" and "omega" are already what you would say aloud. */
+const SAY_WORD={to:'to',rightarrow:'to',longrightarrow:'to',leftarrow:'from',mapsto:'maps to',
+leq:'less than or equal to',le:'less than or equal to',geq:'greater than or equal to',ge:'greater than or equal to',
+ll:'much less than',gg:'much greater than',neq:'not equal to',ne:'not equal to',
+times:'times',cdot:'dot',approx:'approximately',sim:'about',simeq:'approximately',equiv:'identical to',
+propto:'proportional to',pm:'plus or minus',mp:'minus or plus',infty:'infinity',partial:'partial',
+nabla:'del',hbar:'h bar',ell:'l',dagger:'dagger',prime:'prime',
+oplus:'plus',otimes:'tensor',in:'in',subset:'contained in',forall:'for all',exists:'there exists',
+int:'integral',sum:'sum',prod:'product',sqrt:'square root of',langle:'',rangle:'',cdots:'and so on',ldots:'and so on',dots:'and so on'};
+function axSay(s){
+  let t=String(s==null?'':s);
+  t=t.replace(/\$+/g,'');
+  t=t.replace(/\\(?:frac|tfrac|dfrac)\s*\{([^{}]*)\}\s*\{([^{}]*)\}/g,'$1 over $2');
+  t=t.replace(/\\(?:left|right|big|Big|bigg|Bigg|displaystyle|nonumber|quad|qquad)\b/g,' ');
+  t=t.replace(/\\(?:mathcal|mathbb|mathrm|mathbf|mathit|mathsf|text|textrm|Bbb|mathscr|operatorname|bar|hat|tilde|vec)\b/g,' ');
+  t=t.replace(/\\([A-Za-z]+)/g,(m,w)=>SAY_WORD[w]!==undefined?' '+SAY_WORD[w]+' ':' '+w+' ');
+  t=t.replace(/\^\s*/g,' to the power ').replace(/_\s*/g,' sub ');
+  t=t.replace(/[{}]/g,' ').replace(/\s+([,.;:])/g,'$1');
+  return t.replace(/\s+/g,' ').trim();
+}
+
+/* --- read the first paper aloud ------------------------------------------
+   The browser's own speech engine — nothing is loaded from anywhere. */
+let axItems=[];                 /* whatever is on screen right now */
+let axSpeaking=false;
+function axSpeakBtn(on){const b=document.getElementById('arxiv-speak');if(b)b.textContent=on?'\u25A0 Stop':'\u25B6 Play';}
+function axStopSpeech(){try{if(window.speechSynthesis)window.speechSynthesis.cancel();}catch(e){}axSpeaking=false;axSpeakBtn(false);}
+/* browsers cut off a single long utterance, so the script is queued in
+   sentence-sized pieces instead of one block */
+function axChunks(text,max){
+  const out=[];let buf='';
+  for(const w of text.split(/\s+/)){
+    if(!w)continue;
+    if(buf&&(buf.length+1+w.length)>max){out.push(buf);buf=w;}
+    else buf=buf?buf+' '+w:w;
+    if(buf.length>max*0.6&&/[.!?]$/.test(buf)){out.push(buf);buf='';}
+  }
+  if(buf)out.push(buf);
+  return out;
+}
+function axSpeakFirst(){
+  if(axSpeaking){axStopSpeech();return;}
+  if(!('speechSynthesis'in window)||!('SpeechSynthesisUtterance'in window)){toast('This browser has no speech support');return;}
+  const p=axItems[0];
+  if(!p){toast('No paper to read yet');return;}
+  const script='Hi Suman. Today\u2019s first paper is, '+axSay(p.title)+'. '+
+               (p.authors?'Authors are, '+p.authors+'. ':'')+
+               'The abstract says. '+axSay(p.abs);
+  const voices=(window.speechSynthesis.getVoices()||[]);
+  const voice=voices.find(v=>/^en[-_]GB/i.test(v.lang))||voices.find(v=>/^en/i.test(v.lang))||null;
+  window.speechSynthesis.cancel();
+  const parts=axChunks(script,180);
+  parts.forEach((part,i)=>{
+    const u=new SpeechSynthesisUtterance(part);
+    u.rate=0.95;u.lang=voice?voice.lang:'en-GB';if(voice)u.voice=voice;
+    if(i===parts.length-1)u.onend=()=>{axSpeaking=false;axSpeakBtn(false);};
+    u.onerror=()=>{axSpeaking=false;axSpeakBtn(false);};
+    window.speechSynthesis.speak(u);
+  });
+  axSpeaking=true;axSpeakBtn(true);
+}
+window.addEventListener('pagehide',axStopSpeech);
+
 /* paint a list of items + wire the Reading checkboxes and any retry link */
 function axPaint(items,headHTML){
   const el=document.getElementById('arxiv-list');if(!el)return;
+  axItems=items;
   const rows=items.map(it=>{
     const inReading=DB.reading.some(x=>x.key===it.key);
-    return `<div class="arxiv-item"><div class="ax-row"><input type="checkbox" class="check ax-check" ${inReading?'checked':''} title="Add to Reading list" data-key="${esc(it.key)}" data-title="${esc(it.title)}" data-link="${esc(it.link)}" data-authors="${esc(it.authors)}" data-axid="${esc(it.id)}"><div class="ax-main"><a class="ax-title" href="${esc(it.link)}" target="_blank" rel="noopener">${esc(it.title)}</a>${it.id?`<span class="ax-id">arXiv:${esc(it.id)}</span>`:''}<div class="ax-auth">${esc(it.authors)}</div><div class="ax-abs">${esc(it.abs)}</div></div></div></div>`;
+    const title=axTex(it.title),authors=axTex(it.authors);
+    let abs=axTex(it.abs);if(abs.length>340)abs=abs.slice(0,340)+'\u2026';
+    return `<div class="arxiv-item"><div class="ax-row"><input type="checkbox" class="check ax-check" ${inReading?'checked':''} title="Add to Reading list" data-key="${esc(it.key)}" data-title="${esc(title)}" data-link="${esc(it.link)}" data-authors="${esc(authors)}" data-axid="${esc(it.id)}"><div class="ax-main"><a class="ax-title" href="${esc(it.link)}" target="_blank" rel="noopener">${esc(title)}</a>${it.id?`<span class="ax-id">arXiv:${esc(it.id)}</span>`:''}<div class="ax-auth">${esc(authors)}</div><div class="ax-abs">${esc(abs)}</div></div></div></div>`;
   }).join('');
   el.innerHTML=headHTML+rows;
   const r=el.querySelector('#ax-retry');if(r)r.onclick=e=>{e.preventDefault();loadArxiv(true);};
@@ -1131,7 +1248,7 @@ async function loadArxiv(force){
   const hasCache=!!(cache&&cache.items&&cache.items.length);
   /* only trust ymd from caches this version wrote — earlier ones stored dates
      that were not arXiv listing dates at all */
-  const cacheYMD=(hasCache&&cache.v===4)?(cache.ymd||''):'';
+  const cacheYMD=(hasCache&&cache.v===5)?(cache.ymd||''):'';
   /* a listing never changes once it is out, so a cache of the current listing
      is already the right answer — go to the network only when it isn't, or when
      the user asks with Refresh */
@@ -1154,22 +1271,21 @@ async function loadArxiv(force){
     el.innerHTML='<div class="empty" style="padding:16px">'+esc(note)+'. <a href="#" id="ax-retry">Try again</a>, or open <a href="https://arxiv.org/list/hep-th/new" target="_blank" rel="noopener">the list</a> directly.</div>';
     const r=document.getElementById('ax-retry');if(r)r.onclick=e=>{e.preventDefault();loadArxiv(true);};return;
   }
-  const items=raw.map(x=>{
-    let abs=axClean(x.abstract||'');if(abs.length>340)abs=abs.slice(0,340)+'\u2026';
-    return {title:axClean(x.title),link:x.link||('https://arxiv.org/abs/'+x.id),
-            authors:axClean(x.authors||''),abs,id:x.id,key:x.key||x.id};
-  });
+  /* the full abstract is kept — axPaint trims it for display, the reader speaks it whole */
+  const items=raw.map(x=>({title:axClean(x.title),link:x.link||('https://arxiv.org/abs/'+x.id),
+            authors:axClean(x.authors||''),abs:axClean(x.abstract||''),id:x.id,key:x.key||x.id}));
   const listing=data.listing||'';
   /* the file went backwards — a bad deploy or a rolled-back commit — keep ours */
   if(cacheYMD&&listing&&listing<cacheYMD){
     axPaint(cache.items,axHead(cache.items.length,cacheYMD,'published listing is older than the cached one'));arxivLoaded=true;return;
   }
-  DB.arxivCache={v:4,label:axDateLabel(listing),ymd:listing,items};
+  DB.arxivCache={v:5,label:axDateLabel(listing),ymd:listing,items};
   saveNow();
   axPaint(items,axHead(items.length,listing,data.source==='listing-page'?'via the listing page':''));
   arxivLoaded=true;
 }
 const axBtn=document.getElementById('arxiv-refresh');if(axBtn)axBtn.onclick=()=>loadArxiv(true);
+const axSpk=document.getElementById('arxiv-speak');if(axSpk)axSpk.onclick=axSpeakFirst;
 document.getElementById('sem-start').addEventListener('change',e=>{DB.settings.semesterStart=e.target.value;save();teachWeek();});
 document.getElementById('sem-total').addEventListener('input',e=>{DB.settings.totalWeeks=Math.max(1,+e.target.value||16);save();teachWeek();});
 function teachWeek(){
@@ -1266,7 +1382,7 @@ function renderReading(){
   const body=document.getElementById('reading-body');
   const rows=[...DB.reading].sort((a,b)=>(b.added||0)-(a.added||0));
   body.innerHTML=rows.map(r=>`<tr data-id="${r.id}">
-    <td class="paper-cell"><a class="ax-title" style="font-size:14px" href="${esc(r.link||'#')}" target="_blank" rel="noopener">${esc(r.title||'(untitled)')}</a>${r.authors?`<div class="ax-auth">${esc(r.authors)}</div>`:''}${r.arxivId?`<div class="ax-id" style="display:block;margin-top:2px"><a href="${esc(r.link||'#')}" target="_blank" rel="noopener" style="color:var(--faint)">arXiv:${esc(r.arxivId)}</a></div>`:''}</td>
+    <td class="paper-cell"><a class="ax-title" style="font-size:14px" href="${esc(r.link||'#')}" target="_blank" rel="noopener">${esc(axTex(r.title||'(untitled)'))}</a>${r.authors?`<div class="ax-auth">${esc(axTex(r.authors))}</div>`:''}${r.arxivId?`<div class="ax-id" style="display:block;margin-top:2px"><a href="${esc(r.link||'#')}" target="_blank" rel="noopener" style="color:var(--faint)">arXiv:${esc(r.arxivId)}</a></div>`:''}</td>
     <td class="cmt-cell"><textarea class="cmt" data-f="comment" rows="1" placeholder="notes\u2026">${esc(r.comment)}</textarea></td>
     <td><button class="del-x" data-del="${r.id}">×</button></td>
   </tr>`).join('')||`<tr><td colspan="3" class="empty">No papers yet — tick a paper in the arXiv feed on the Research page.</td></tr>`;
