@@ -454,7 +454,7 @@ hr.soft{border:none;border-top:1px solid var(--line);margin:20px 0}
       <h3 style="margin:26px 0 0;font-size:16px">Timeline</h3>
       <div class="gantt" id="res-gantt"></div>
 
-      <h3 style="margin:30px 0 0;font-size:16px;display:flex;justify-content:space-between;align-items:center">New on arXiv &middot; hep-th <span style="display:flex;gap:8px"><button class="btn btn-sm" id="arxiv-speak" title="Read the first paper aloud">&#9654; Play</button><button class="btn btn-sm" id="arxiv-refresh">Refresh</button></span></h3>
+      <h3 style="margin:30px 0 0;font-size:16px;display:flex;justify-content:space-between;align-items:center">New on arXiv &middot; hep-th <span style="display:flex;gap:8px"><button class="btn btn-sm" id="arxiv-speak" title="Read today's papers aloud">&#9654; Play</button><button class="btn btn-sm" id="arxiv-refresh">Refresh</button></span></h3>
       <p class="muted" style="margin:2px 0 0">Today&rsquo;s new submissions only — cross-lists and replacements excluded.</p>
       <div id="arxiv-list" class="card" style="margin-top:12px"></div>
     </section>
@@ -1163,7 +1163,7 @@ function axSay(s){
   return t.replace(/\s+/g,' ').trim();
 }
 
-/* --- read the first paper aloud ------------------------------------------
+/* --- read the listing aloud ---------------------------------------------
    The browser's own speech engine — nothing is loaded from anywhere. */
 let axItems=[];                 /* whatever is on screen right now */
 let axSpeaking=false;
@@ -1182,14 +1182,16 @@ function axChunks(text,max){
   if(buf)out.push(buf);
   return out;
 }
-function axSpeakFirst(){
+function axSpeakAll(){
   if(axSpeaking){axStopSpeech();return;}
   if(!('speechSynthesis'in window)||!('SpeechSynthesisUtterance'in window)){toast('This browser has no speech support');return;}
-  const p=axItems[0];
-  if(!p){toast('No paper to read yet');return;}
-  const script='Hi Suman. Today\u2019s first paper is, '+axSay(p.title)+'. '+
-               (p.authors?'Authors are, '+p.authors+'. ':'')+
-               'The abstract says. '+axSay(p.abs);
+  if(!axItems.length){toast('No papers to read yet');return;}
+  const n=axItems.length;
+  const script=['Hi Suman. There '+(n===1?'is':'are')+' '+n+' new paper'+(n===1?'':'s')+' today.']
+    .concat(axItems.map((p,i)=>'Paper '+(i+1)+' of '+n+'. '+axSay(p.title)+'. '+
+            (p.authors?'Authors are, '+p.authors+'. ':'')+
+            'The abstract says. '+axSay(p.abs)))
+    .concat(['That is the end of the listing.']).join(' ');
   const voices=(window.speechSynthesis.getVoices()||[]);
   const voice=voices.find(v=>/^en[-_]GB/i.test(v.lang))||voices.find(v=>/^en/i.test(v.lang))||null;
   window.speechSynthesis.cancel();
@@ -1285,7 +1287,7 @@ async function loadArxiv(force){
   arxivLoaded=true;
 }
 const axBtn=document.getElementById('arxiv-refresh');if(axBtn)axBtn.onclick=()=>loadArxiv(true);
-const axSpk=document.getElementById('arxiv-speak');if(axSpk)axSpk.onclick=axSpeakFirst;
+const axSpk=document.getElementById('arxiv-speak');if(axSpk)axSpk.onclick=axSpeakAll;
 document.getElementById('sem-start').addEventListener('change',e=>{DB.settings.semesterStart=e.target.value;save();teachWeek();});
 document.getElementById('sem-total').addEventListener('input',e=>{DB.settings.totalWeeks=Math.max(1,+e.target.value||16);save();teachWeek();});
 function teachWeek(){
