@@ -1,0 +1,52 @@
+name: Update arXiv hep-th listing
+
+on:
+  # Times are UTC. arXiv announces at 20:00 Eastern, which is 00:00 UTC in
+  # summer and 01:00 UTC in winter, so both are covered; the later runs are
+  # there to pick up a listing that a failed or delayed earlier run missed.
+  schedule:
+    - cron: '30 0 * * *'
+    - cron: '30 1 * * *'
+    - cron: '30 6 * * *'
+    - cron: '30 12 * * *'
+    - cron: '30 18 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+# never let two runs push at the same time
+concurrency:
+  group: arxiv-listing
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # No dependencies to install — the script is plain Node and uses the
+      # built-in fetch, so there is nothing in the chain that can rot.
+      - name: Build hep-th.json
+        run: node scripts/fetch-hep-th.js
+
+      - name: Commit if the listing changed
+        run: |
+          if [ -z "$(git status --porcelain -- hep-th.json)" ]; then
+            echo "No change to hep-th.json — nothing to commit."
+            exit 0
+          fi
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add hep-th.json
+          git commit -m "arXiv hep-th listing: $(node -e "process.stdout.write(require('./hep-th.json').listing)")"
+          git push
