@@ -1551,6 +1551,7 @@ document.getElementById('imp-file').onchange=e=>{const f=e.target.files[0];if(!f
   DB.sync.token=t;DB.sync.gistId=g;
   saveNow();curNote=null;arxivLoaded=false;
   dirty=true;schedulePush();      /* treat an import as an edit: it should reach the Gist */
+  applySeeds();                   /* an old backup may predate a seed */
   render();toast('Backup loaded');
 }catch(err){toast('Could not read file');}};r.readAsText(f);e.target.value='';};
 document.getElementById('gh-token').addEventListener('input',e=>{DB.sync.token=e.target.value.trim();save();});
@@ -1617,6 +1618,9 @@ async function syncPull(quiet){
     pulledOk=true;dirty=false;clearTimeout(pushT);pushFabSet('hide');   /* fresh copy — nothing pending */
     remoteRev=j.updated_at||null;                    /* the revision we are now in step with */
     curNote=null;arxivLoaded=false;
+    /* the copy we just pulled may predate a seed — apply it now, on top of the
+       fresh data, and let the normal dirty/push path carry it back to the Gist */
+    applySeeds();
     ghStatus('Pulled \u2713 '+new Date().toLocaleTimeString());
     if(!quiet)toast('Synced from Gist \u2713');
     render();                                        /* redraw the view we're on */
@@ -1636,11 +1640,21 @@ document.getElementById('gh-pull').onclick=()=>syncPull(false);
 let toastT;function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),1900);}
 const statusList=document.createElement('datalist');statusList.id='statuses';['Ongoing','Closed','Published','Review','Scooped','Starting','Almost done'].forEach(s=>{const o=document.createElement('option');o.value=s;statusList.appendChild(o);});document.body.appendChild(statusList);
 
-/* one-time reminder seed (also covers data from the earlier version) */
+/* ---- one-time seeds ----
+   These have to run against whatever copy we actually end up editing. On a synced
+   device the boot pull replaces DB wholesale a moment after load, so seeding at
+   load time alone would be silently thrown away on every boot. applySeeds() is
+   therefore idempotent (each block is flag-guarded) and is called again after every
+   pull and import; when it does add something it marks the copy dirty, so the
+   result reaches the Gist instead of being re-seeded and re-discarded forever. */
+function applySeeds(){
+  let changed=false;
+
+/* reminder seed (also covers data from the earlier version) */
 if(!DB.remSeeded){
   if(!DB.weeklyRem.length)DB.weeklyRem=[{id:uid(),item:'Plan the week ahead',done:false},{id:uid(),item:'Back up / sync data',done:false}];
   if(!DB.monthlyRem.length)DB.monthlyRem=[{id:uid(),item:'Electricity & water bill',done:false},{id:uid(),item:'Rent',done:false},{id:uid(),item:'Income tax / advance tax',done:false}];
-  DB.remSeeded=true;save();
+  DB.remSeeded=true;changed=true;
 }
 
 /* ---- calendar seed: IIT Palakkad holidays, academic calendar and duty periods ----
@@ -1670,7 +1684,11 @@ if(!DB.iitpkdSeedV3){
   RES.forEach(([t,d])=>put(t,'Restricted Holiday',d));
   ONE.forEach(([t,c,d])=>put(t,c,d));
   SPAN.forEach(([t,c,f,l])=>put(t,c,f,l));
-  DB.holidays2026Seeded=true;DB.iitpkdSeedV2=true;DB.iitpkdSeedV3=true;save();
+  DB.holidays2026Seeded=true;DB.iitpkdSeedV2=true;DB.iitpkdSeedV3=true;changed=true;
+}
+
+  if(changed)save();          /* marks dirty + schedules the push, once armed */
+  return changed;
 }
 
 /* ---------- boot sync gate ----------
@@ -1713,6 +1731,9 @@ gateBtn.onclick=async()=>{
 };
 document.getElementById('gate-skip').onclick=()=>{
   gateBg.classList.remove('show');
+  /* editing the local copy anyway — seed it so this session is usable; a later
+     successful pull will re-seed on top of the Gist copy if it needs it */
+  if(applySeeds())render();
   toast('Working offline \u2014 auto-push is off');
 };
 
@@ -1751,11 +1772,15 @@ window.addEventListener('beforeunload',e=>{
 
 /* boot */
 paintArt('today');
-renderToday();
 if(DB.sync.token&&DB.sync.gistId){
+  /* seeding here would be wiped by the pull that is about to replace DB, so the
+     gate's pull (or the skip button) does it instead */
+  renderToday();
   gateBg.classList.add('show');
 }else{
   pulledOk=false;   /* no sync configured on this device — nothing to push to */
+  applySeeds();
+  renderToday();
 }
 </script>
 </body>
