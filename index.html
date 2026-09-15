@@ -212,6 +212,8 @@ hr.soft{border:none;border-top:1px solid var(--line);margin:20px 0}
 .cal-cell:hover{background:var(--surface-2)}
 .cal-cell:nth-child(7n){border-right:none}
 .cal-cell.dim{background:rgba(247,244,238,.5);color:var(--faint)}
+.cal-cell.vac:not(.dim){background:rgba(222,215,201,.20)}
+.cal-cell.wknd:not(.dim),.cal-cell.off:not(.dim){background:rgba(222,215,201,.42)}
 .cal-cell.today .dnum{background:var(--accent);color:#fff}
 .dnum{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;border-radius:50%;font-size:12.5px;font-weight:600;font-variant-numeric:tabular-nums}
 .ev{margin-top:3px;padding:2px 6px;border-radius:5px;font-size:11.5px;font-weight:500;color:#fff;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;max-width:100%}
@@ -227,6 +229,23 @@ hr.soft{border:none;border-top:1px solid var(--line);margin:20px 0}
 .agenda .ev-line .tt{font-weight:500}
 .agenda .ev-line .dd{color:var(--muted);font-size:12.5px}
 .agenda .ev-line .tm{color:var(--accent);font-weight:600;font-variant-numeric:tabular-nums;font-size:12.5px;min-width:96px;flex-shrink:0}
+
+/* ---------- year view ---------- */
+.year-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+@media(max-width:1000px){.year-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:560px){.year-grid{grid-template-columns:1fr}}
+.year-month{background:rgba(251,250,246,.55);backdrop-filter:blur(20px) saturate(1.25);-webkit-backdrop-filter:blur(20px) saturate(1.25);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:10px;cursor:pointer;transition:background .12s}
+.year-month:hover{background:var(--surface-2)}
+.year-month h4{font-size:13px;text-align:center;margin-bottom:8px;font-weight:600}
+.year-mini{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.year-mini .ym-dow{font-size:8.5px;color:var(--faint);text-align:center;font-weight:600}
+.year-mini .ym-cell{position:relative;text-align:center;font-size:10px;padding:2px 0;border-radius:4px;color:var(--muted);cursor:pointer}
+.year-mini .ym-cell.dim{visibility:hidden;pointer-events:none}
+.year-mini .ym-cell.vac{background:rgba(222,215,201,.26)}
+.year-mini .ym-cell.wknd,.year-mini .ym-cell.off{background:rgba(222,215,201,.55)}
+.year-mini .ym-cell.today{background:var(--accent);color:#fff;font-weight:700}
+.year-mini .ym-dots{display:flex;justify-content:center;gap:1px;margin-top:1px;height:4px}
+.year-mini .ym-dot{width:3.5px;height:3.5px;border-radius:50%}
 
 /* color swatches */
 .swatches{display:flex;gap:8px}
@@ -423,6 +442,7 @@ hr.soft{border:none;border-top:1px solid var(--line);margin:20px 0}
           <button data-mode="day">Day</button>
           <button data-mode="week">Week</button>
           <button data-mode="month" class="active">Month</button>
+          <button data-mode="year">Year</button>
         </div>
         <button class="btn btn-primary btn-sm" id="cal-add" style="margin-left:auto">+ New event</button>
       </div>
@@ -645,6 +665,7 @@ const DEFAULT={
   settings:{semesterStart:'',totalWeeks:16},
   notes:[], events:[], research:[], teaching:[], review:[], reviewWeek:'', reading:[], arxivCache:null,
   weeklyRem:[], monthlyRem:[], remWeekKey:'', remMonthKey:'', remSeeded:false,
+  catColors:{}, holidays2026Seeded:false, iitpkdSeedV2:false, iitpkdSeedV3:false,
   teachPage:0, teachNames:['Lecture 1','Lecture 2'],
   sync:{token:'',gistId:''}
 };
@@ -657,6 +678,44 @@ function save(){clearTimeout(saveT);saveT=setTimeout(()=>localStorage.setItem(KE
 function saveNow(){clearTimeout(saveT);localStorage.setItem(KEY,JSON.stringify(DB));}
 function schedulePush(){clearTimeout(pushT);pushT=setTimeout(()=>{if(pulledOk&&dirty&&!syncing)syncPush(false);},PUSH_DELAY);}
 function uid(){return Math.random().toString(36).slice(2,9);}
+/* every category has a fixed slot in the palette, so a colour never moves between
+   reloads or devices: red = closed / leave, green = restricted, teal = vacation,
+   yellow = exam duty. Anything else the user invents later gets an unused colour. */
+const CAT_COLORS={
+  'Gazetted Holiday':COLORS[0],          /* red */
+  'Casual leave planned':COLORS[0],      /* red */
+  'Restricted Holiday':COLORS[2],        /* green */
+  'Faculty vacation':COLORS[5],          /* teal */
+  'Student vacation':COLORS[5],          /* teal */
+  'Staff vacation':COLORS[5],            /* teal */
+  'Exam/eval duty (confirmed)':COLORS[3],/* yellow */
+  'Exam/eval duty (2027 estimate)':COLORS[3],
+  'Academic calendar':COLORS[1],         /* blue */
+  'Non-instructional day':COLORS[1],     /* blue */
+  'Institute meeting':COLORS[4],         /* violet */
+  'Institute event':COLORS[4]            /* violet */
+};
+/* categories that mean "not a working day" — these cells get the same mild
+   shading the weekends do */
+const OFF_CATS=['Gazetted Holiday','Casual leave planned'];
+const isOffDay=list=>list.some(e=>OFF_CATS.includes(e.cat));
+/* days off for Suman specifically, not the institute — a lighter wash, and it
+   loses to the weekend / holiday shade on any day that is both (those rules come
+   later in the sheet). Student and staff vacation are deliberately not here: they
+   are other people's time off and shouldn't grey out a working day. */
+const SOFT_CATS=['Faculty vacation','Non-instructional day'];
+const isSoftDay=list=>list.some(e=>SOFT_CATS.includes(e.cat));
+function colorForCat(cat){  if(!cat)return null;
+  if(CAT_COLORS[cat])return CAT_COLORS[cat];
+  if(!DB.catColors)DB.catColors={};
+  if(!DB.catColors[cat]){
+    const used=Object.values(DB.catColors).concat(Object.values(CAT_COLORS));
+    const free=COLORS.filter(c=>!used.includes(c));
+    const pool=free.length?free:COLORS;
+    DB.catColors[cat]=pool[Math.floor(Math.random()*pool.length)];
+  }
+  return DB.catColors[cat];
+}
 /* floating push button — a visual read-out of the `dirty` flag */
 function pushFabSet(mode){
   const f=document.getElementById('push-fab');if(!f)return;
@@ -872,8 +931,8 @@ document.getElementById('cal-prev').onclick=()=>{shiftCal(-1);};
 document.getElementById('cal-next').onclick=()=>{shiftCal(1);};
 document.getElementById('cal-today').onclick=()=>{calRef=new Date();renderCal();};
 document.getElementById('cal-add').onclick=()=>openEvent(null,new Date());
-function shiftCal(n){if(calMode==='day')calRef=addDays(calRef,n);else if(calMode==='week')calRef=addDays(calRef,7*n);else{calRef=new Date(calRef.getFullYear(),calRef.getMonth()+n,1);}renderCal();}
-function renderCal(){calMode==='month'?renderMonth():renderAgenda();}
+function shiftCal(n){if(calMode==='day')calRef=addDays(calRef,n);else if(calMode==='week')calRef=addDays(calRef,7*n);else if(calMode==='year'){calRef=new Date(calRef.getFullYear()+n,calRef.getMonth(),1);}else{calRef=new Date(calRef.getFullYear(),calRef.getMonth()+n,1);}renderCal();}
+function renderCal(){if(calMode==='month')renderMonth();else if(calMode==='year')renderYear();else renderAgenda();}
 function renderMonth(){
   document.getElementById('cal-title').textContent=MON[calRef.getMonth()]+' '+calRef.getFullYear();
   const first=new Date(calRef.getFullYear(),calRef.getMonth(),1);
@@ -884,16 +943,50 @@ function renderMonth(){
   for(const c of cells){
     const dim=c.getMonth()!==calRef.getMonth();
     const today=sameDay(c,TODAY);
-    const dayEvs=evs.filter(e=>sameDay(e._s,c)).slice(0,4);
-    html+=`<div class="cal-cell ${dim?'dim':''} ${today?'today':''}" data-d="${ymd(c)}">
+    const wk=c.getDay()===0||c.getDay()===6;
+    const allEvs=evs.filter(e=>sameDay(e._s,c));
+    const off=isOffDay(allEvs);
+    const vac=isSoftDay(allEvs);
+    const dayEvs=allEvs.slice(0,4);
+    html+=`<div class="cal-cell ${dim?'dim':''} ${vac?'vac':''} ${wk?'wknd':''} ${off?'off':''} ${today?'today':''}" data-d="${ymd(c)}">
       <div class="dnum">${c.getDate()}</div>
-      ${dayEvs.map(e=>e.isLecture?`<div class="ev ev-lec" style="background:${LEC_COLOR}" data-lec="${e.lecId}" data-page="${e.page}" title="Lecture \u2014 click to open in Teaching"><span class="evtime">${fmtTime(e._s)}</span>${esc(e.title||'')}</div>`:`<div class="ev" style="background:${e.color||COLORS[0]}" data-ev="${e.id}" data-inst="${e._s.toISOString()}"><span class="evtime">${e.recur&&e.recur!=='none'?'':fmtTime(e._s)}</span>${esc(e.title||'')}</div>`).join('')}
+      ${dayEvs.map(e=>e.isLecture?`<div class="ev ev-lec" style="background:${LEC_COLOR}" data-lec="${e.lecId}" data-page="${e.page}" title="Lecture \u2014 click to open in Teaching"><span class="evtime">${fmtTime(e._s)}</span>${esc(e.title||'')}</div>`:`<div class="ev" style="background:${e.color||COLORS[0]}" data-ev="${e.id}" data-inst="${e._s.toISOString()}"><span class="evtime">${e.allDay||(e.recur&&e.recur!=='none')?'':fmtTime(e._s)}</span>${esc(e.title||'')}</div>`).join('')}
     </div>`;
   }
   html+='</div></div>';
   const body=document.getElementById('cal-body');body.innerHTML=html;
   body.querySelectorAll('.cal-cell').forEach(c=>c.addEventListener('click',e=>{if(e.target.closest('.ev'))return;openEvent(null,new Date(c.dataset.d+'T09:00'));}));
   body.querySelectorAll('.ev').forEach(el=>el.addEventListener('click',e=>{e.stopPropagation();if(el.dataset.lec){gotoLecture(el.dataset.page);}else{openEvent(el.dataset.ev);}}));
+}
+function renderYear(){
+  const yr=calRef.getFullYear();
+  document.getElementById('cal-title').textContent=String(yr);
+  const yStart=new Date(yr,0,1),yEnd=new Date(yr+1,0,1);
+  const evs=allEventsInRange(yStart,yEnd);
+  const byDay={};
+  evs.forEach(e=>{const k=ymd(e._s);(byDay[k]=byDay[k]||[]).push(e);});
+  let html='<div class="year-grid">';
+  for(let m=0;m<12;m++){
+    const first=new Date(yr,m,1);
+    const gridStart=addDays(first,-first.getDay());
+    html+=`<div class="year-month" data-m="${m}"><h4>${MON[m]}</h4><div class="year-mini">`+DOW.map(d=>`<div class="ym-dow">${d[0]}</div>`).join('');
+    for(let i=0;i<42;i++){
+      const c=addDays(gridStart,i);
+      if(c.getMonth()!==m){html+='<div class="ym-cell dim">&nbsp;</div>';continue;}
+      const today=sameDay(c,TODAY);
+      const wk=c.getDay()===0||c.getDay()===6;
+      const allEvs=byDay[ymd(c)]||[];
+      const off=isOffDay(allEvs);
+      const vac=isSoftDay(allEvs);
+      const dayEvs=allEvs.slice(0,3);
+      html+=`<div class="ym-cell ${vac?'vac':''} ${wk?'wknd':''} ${off?'off':''} ${today?'today':''}" data-d="${ymd(c)}">${c.getDate()}<div class="ym-dots">${dayEvs.map(e=>`<span class="ym-dot" style="background:${e.isLecture?LEC_COLOR:(e.color||COLORS[0])}"></span>`).join('')}</div></div>`;
+    }
+    html+='</div></div>';
+  }
+  html+='</div>';
+  const body=document.getElementById('cal-body');body.innerHTML=html;
+  body.querySelectorAll('.ym-cell[data-d]').forEach(el=>el.addEventListener('click',e=>{e.stopPropagation();calMode='day';calRef=parseYMD(el.dataset.d);document.querySelectorAll('#cal-modes button').forEach(b=>b.classList.toggle('active',b.dataset.mode==='day'));renderCal();}));
+  body.querySelectorAll('.year-month').forEach(el=>el.addEventListener('click',e=>{if(e.target.closest('.ym-cell'))return;calMode='month';calRef=new Date(yr,+el.dataset.m,1);document.querySelectorAll('#cal-modes button').forEach(b=>b.classList.toggle('active',b.dataset.mode==='month'));renderCal();}));
 }
 function renderAgenda(){
   let days,title;
@@ -906,7 +999,7 @@ function renderAgenda(){
     const de=evs.filter(e=>sameDay(e._s,d));
     html+=`<div class="day-row"><div class="day-label">${DOW[d.getDay()]} <span class="sub">${d.getDate()} ${MON3[d.getMonth()]}${sameDay(d,TODAY)?' \u00b7 today':''}</span></div><div>`;
     if(!de.length)html+='<div class="faint" style="padding:6px 0">—</div>';
-    else de.forEach(e=>{const ca=e.isLecture?`data-lec="${e.lecId}" data-page="${e.page}"`:`data-ev="${e.id}"`;html+=`<div class="ev-line" ${ca} style="cursor:pointer"><div class="tm">${fmtTime(e._s)}</div><div class="swatch" style="background:${e.isLecture?LEC_COLOR:(e.color||COLORS[0])}"></div><div><div class="tt">${esc(e.title||'')}</div>${e.details?`<div class="dd">${esc(e.details)}</div>`:''}</div></div>`;});
+    else de.forEach(e=>{const ca=e.isLecture?`data-lec="${e.lecId}" data-page="${e.page}"`:`data-ev="${e.id}"`;html+=`<div class="ev-line" ${ca} style="cursor:pointer"><div class="tm">${e.allDay?'All day':fmtTime(e._s)}</div><div class="swatch" style="background:${e.isLecture?LEC_COLOR:(e.color||COLORS[0])}"></div><div><div class="tt">${esc(e.title||'')}</div>${e.details?`<div class="dd">${esc(e.details)}</div>`:''}</div></div>`;});
     html+='</div></div>';
   }
   html+='</div>';
@@ -1548,6 +1641,36 @@ if(!DB.remSeeded){
   if(!DB.weeklyRem.length)DB.weeklyRem=[{id:uid(),item:'Plan the week ahead',done:false},{id:uid(),item:'Back up / sync data',done:false}];
   if(!DB.monthlyRem.length)DB.monthlyRem=[{id:uid(),item:'Electricity & water bill',done:false},{id:uid(),item:'Rent',done:false},{id:uid(),item:'Income tax / advance tax',done:false}];
   DB.remSeeded=true;save();
+}
+
+/* ---- calendar seed: IIT Palakkad holidays, academic calendar and duty periods ----
+   2026 gazetted / restricted holidays come from OM IITPKD/Admn./General/2025-26/018;
+   the semester, examination, vacation, meeting and institute-event dates come from
+   Academic Calendar 2026; the Nov 2026 - Oct 2027 leave / vacation / exam-duty blocks
+   come from the planning calendar. Everything is added as an ordinary all-day event
+   with a `cat`, so the normal Day / Week / Month / Year views render it with no
+   special-casing. Multi-day blocks ride on the existing daily-recurrence machinery
+   rather than a new event type. */
+if(!DB.iitpkdSeedV3){
+  /* clear anything an earlier seed put in, leaving the user's own events alone */
+  DB.events=DB.events.filter(e=>!(e.seed==='iitpkd'||(DB.holidays2026Seeded&&e.allDay&&(e.cat==='Gazetted Holiday'||e.cat==='Restricted Holiday'))));
+  const GAZ=[['Republic Day','2026-01-26'],['Holi','2026-03-04'],["Idu'l Fitr*",'2026-03-21'],['Mahavir Jayanti','2026-03-31'],['Good Friday','2026-04-03'],['Buddha Purnima','2026-05-01'],["Idu'l Zuha (Bakrid)*",'2026-05-27'],['Muharram*','2026-06-26'],['Independence Day','2026-08-15'],["Prophet Mohammad's Birthday (Id-E-Milad)*",'2026-08-26'],['Ganesh Chaturthi / Vinayaka Chaturthi','2026-09-14'],["Mahatma Gandhi's Birthday",'2026-10-02'],['Dussehra (Mahashtami)','2026-10-19'],['Dussehra','2026-10-20'],['Diwali (Deepavali)','2026-11-08'],["Guru Nanak's Birthday",'2026-11-24'],['Christmas Day','2026-12-25']];
+  const RES=[["New Year's Day",'2026-01-01'],["Hazarat Ali's Birthday",'2026-01-03'],['Makar Sankranti','2026-01-14'],['Magha Bihu / Pongal','2026-01-14'],['Basant Panchami / Sri Panchami','2026-01-23'],["Guru Ravi Das's Birthday",'2026-02-01'],['Birthday of Swami Dayananda Saraswati','2026-02-12'],['Maha Shivaratri','2026-02-15'],['Shiva Ji Jayanti','2026-02-19'],['Holika Dahan','2026-03-03'],['Dolyatra','2026-03-03'],['Chaitra Sukladi / Gudi Padava / Ugadi / Cheti Chand','2026-03-19'],['Jamat-Ul-Vida','2026-03-20'],['Ram Navami','2026-03-26'],['Easter Sunday','2026-04-05'],["Vaisakhi / Vishu / Meshadi (Tamil New Year's Day)",'2026-04-14'],['Vaisakhadi (Bengal) / Bahag Bihu (Assam)','2026-04-15'],["Guru Rabindranath's Birthday",'2026-05-09'],['Rath Yatra','2026-07-16'],["Parsi New Year's Day / Nauraj",'2026-08-15'],['Onam or Thiru Onam','2026-08-26'],['Raksha Bandhan','2026-08-28'],['Janmashtami (Vaishnva)','2026-09-04'],['Dussehra (Saptami)','2026-10-18'],['Dussehra (Mahanavami)','2026-10-20'],["Maharishi Valmiki's Birthday",'2026-10-26'],['Karaka Chaturthi (Karwa Chouth)','2026-10-29'],['Naraka Chaturdasi','2026-11-08'],['Govardhan Puja','2026-11-09'],['Bhai Duj','2026-11-11'],['Pratihar Shashti or Surya Shashti (Chhat Puja)','2026-11-15'],["Guru Teg Bahadur's Martyrdom Day",'2026-11-24'],["Hazarat Ali's Birthday",'2026-12-23'],['Christmas Eve','2026-12-24']];
+  /* single days: [title, category, date] */
+  const ONE=[["Institute closed","Gazetted Holiday","2027-01-15"],["Institute closed","Gazetted Holiday","2027-01-26"],["Institute closed","Gazetted Holiday","2027-03-10"],["Casual leave planned","Casual leave planned","2027-03-22"],["Institute closed","Gazetted Holiday","2027-03-23"],["Casual leave planned","Casual leave planned","2027-03-24"],["Casual leave planned","Casual leave planned","2027-03-25"],["Institute closed","Gazetted Holiday","2027-03-26"],["Institute closed","Gazetted Holiday","2027-04-19"],["Institute closed","Gazetted Holiday","2027-05-17"],["Casual leave planned","Casual leave planned","2027-05-18"],["Casual leave planned","Casual leave planned","2027-05-19"],["Institute closed","Gazetted Holiday","2027-05-20"],["Institute closed","Gazetted Holiday","2027-06-16"],["Institute closed","Gazetted Holiday","2027-08-15"],["Institute closed","Gazetted Holiday","2027-10-02"],["Casual leave planned","Casual leave planned","2027-10-05"],["Restricted holiday claimed","Restricted Holiday","2027-10-06"],["Restricted holiday claimed","Restricted Holiday","2027-10-07"],["Institute closed","Gazetted Holiday","2027-10-08"],["Institute closed","Gazetted Holiday","2027-10-09"],["Casual leave planned","Casual leave planned","2027-10-11"],["Institute closed","Gazetted Holiday","2027-10-29"],["Exam/eval duty","Exam/eval duty (confirmed)","2026-11-23"],["Exam/eval duty","Exam/eval duty (confirmed)","2026-12-08"],["Exam/eval duty","Exam/eval duty (confirmed)","2026-12-16"],["Exam/eval duty","Exam/eval duty (confirmed)","2027-01-05"],["Exam/eval duty (2027 estimate)","Exam/eval duty (2027 estimate)","2027-03-11"],["Exam/eval duty (2027 estimate)","Exam/eval duty (2027 estimate)","2027-05-18"],["Exam/eval duty (2027 estimate)","Exam/eval duty (2027 estimate)","2027-09-25"],
+  /* --- Academic Calendar 2026 --- */
+  ["Last date of in-person enrollment","Academic calendar","2026-01-06"],["Classes commence (Jan-May 2026)","Academic calendar","2026-01-07"],["First CCM week","Academic calendar","2026-01-21"],["Last date for adding a course","Academic calendar","2026-01-23"],["Last date for dropping a course","Academic calendar","2026-03-10"],["Midterm CCM","Academic calendar","2026-03-11"],["Pre-registration (for Aug-Nov 2026)","Academic calendar","2026-04-08"],["Saturday instructional day (buffer)","Academic calendar","2026-04-18"],["Last instructional day","Academic calendar","2026-04-23"],["Final CCM","Academic calendar","2026-05-18"],["Results (final year)","Academic calendar","2026-05-26"],["Results (junior years)","Academic calendar","2026-06-17"],["Last date of in-person enrollment","Academic calendar","2026-07-28"],["Classes commence (Aug-Dec 2026)","Academic calendar","2026-07-29"],["First CCM week","Academic calendar","2026-08-11"],["Last date for adding a course","Academic calendar","2026-08-18"],["Saturday instructional day (buffer)","Academic calendar","2026-09-19"],["Midterm CCM","Academic calendar","2026-09-29"],["Last date for dropping a course","Academic calendar","2026-10-09"],["Pre-registration (for Jan-May 2027)","Academic calendar","2026-10-26"],["Saturday instructional day (buffer)","Academic calendar","2026-10-31"],["Last instructional day","Academic calendar","2026-11-12"],["Final CCM","Academic calendar","2026-12-08"],["Results (all batches)","Academic calendar","2026-12-16"],["Classes commence (Jan-May 2027)","Academic calendar","2027-01-06"],["Non-instructional day (Institute Day)","Non-instructional day","2026-01-19"],["Non-instructional day (afternoon session)","Non-instructional day","2026-02-27"],["Non-instructional day","Non-instructional day","2026-09-25"],["Senate (35th)","Institute meeting","2026-01-09"],["BAC (42nd)","Institute meeting","2026-03-06"],["BoR (48th)","Institute meeting","2026-03-09"],["Board of ICSR","Institute meeting","2026-04-01"],["Senate (36th)","Institute meeting","2026-04-24"],["BAC (43rd)","Institute meeting","2026-06-05"],["BoR (49th)","Institute meeting","2026-06-08"],["Senate (37th)","Institute meeting","2026-07-03"],["BAC (44th)","Institute meeting","2026-09-11"],["BoR (50th)","Institute meeting","2026-09-15"],["Senate (38th)","Institute meeting","2026-10-16"],["Board of ICSR","Institute meeting","2026-11-13"],["BAC (45th)","Institute meeting","2026-12-04"],["BoR (51st)","Institute meeting","2026-12-07"],["Institute Day","Institute event","2026-01-19"],["Convocation","Institute event","2026-07-18"],["Arrival of new students (tentative)","Institute event","2026-07-23"]];
+  /* multi-day blocks: [title, category, first day, last day] */
+  const SPAN=[["Faculty vacation","Faculty vacation","2026-12-09","2026-12-22"],["Faculty vacation","Faculty vacation","2026-12-28","2027-01-01"],["Faculty vacation","Faculty vacation","2027-05-21","2027-07-16"],["Exam/eval duty","Exam/eval duty (confirmed)","2026-11-16","2026-11-21"],["Exam/eval duty","Exam/eval duty (confirmed)","2026-11-25","2026-11-28"],["Exam/eval duty","Exam/eval duty (confirmed)","2026-11-30","2026-12-01"],["Exam/eval duty","Exam/eval duty (confirmed)","2026-12-29","2027-01-02"],["Exam/eval duty (2027 estimate)","Exam/eval duty (2027 estimate)","2027-02-11","2027-02-23"],["Exam/eval duty (2027 estimate)","Exam/eval duty (2027 estimate)","2027-03-16","2027-03-28"],["Exam/eval duty (2027 estimate)","Exam/eval duty (2027 estimate)","2027-04-24","2027-04-25"],["Exam/eval duty (2027 estimate)","Exam/eval duty (2027 estimate)","2027-04-27","2027-05-09"],["Exam/eval duty (2027 estimate)","Exam/eval duty (2027 estimate)","2027-05-11","2027-05-12"],["Exam/eval duty (2027 estimate)","Exam/eval duty (2027 estimate)","2027-09-07","2027-09-19"],["Exam/eval duty (2027 estimate)","Exam/eval duty (2027 estimate)","2027-09-28","2027-10-01"],["Exam/eval duty (2027 estimate)","Exam/eval duty (2027 estimate)","2027-10-12","2027-10-27"],
+  /* --- Academic Calendar 2026 --- */
+  ["Faculty vacation","Faculty vacation","2026-05-19","2026-07-17"],["Student vacation","Student vacation","2026-05-13","2026-07-24"],["Student vacation","Student vacation","2026-12-02","2027-01-01"],["Staff vacation (slot 1)","Staff vacation","2026-05-25","2026-05-29"],["Staff vacation (slot 2)","Staff vacation","2026-06-15","2026-06-19"],["Test I (Jan-May sem)","Exam/eval duty (confirmed)","2026-02-11","2026-02-23"],["Test II (Jan-May sem)","Exam/eval duty (confirmed)","2026-03-16","2026-03-28"],["Laboratory course exams","Exam/eval duty (confirmed)","2026-04-24","2026-04-25"],["End semester examinations","Exam/eval duty (confirmed)","2026-04-27","2026-05-09"],["End semester project presentations","Exam/eval duty (confirmed)","2026-05-11","2026-05-12"],["Makeup/supplementary exams (final year)","Exam/eval duty (confirmed)","2026-06-08","2026-06-15"],["Makeup/supplementary exams (junior years)","Exam/eval duty (confirmed)","2026-07-20","2026-07-27"],["Test I (Aug-Dec sem)","Exam/eval duty (confirmed)","2026-09-07","2026-09-19"],["Mid term examination","Exam/eval duty (confirmed)","2026-09-28","2026-10-01"],["Test II (Aug-Dec sem)","Exam/eval duty (confirmed)","2026-10-12","2026-10-27"],["Laboratory course exams","Exam/eval duty (confirmed)","2026-11-13","2026-11-14"],["Registration & fee payment","Academic calendar","2025-12-01","2026-01-02"],["Registration & fee payment","Academic calendar","2026-06-22","2026-07-24"],["General Championship","Institute event","2026-01-30","2026-02-07"],["Research Scholars Day","Institute event","2026-02-27","2026-02-28"],["Industry Academic Conclave (IAC 8.0)","Institute event","2026-09-25","2026-09-26"]];
+  const put=(title,cat,from,to)=>DB.events.push({id:uid(),title,details:'',cat,seed:'iitpkd',allDay:true,color:colorForCat(cat),
+    start:from+'T00:00',end:from+'T23:59',recur:to?'daily':'none',until:to||''});
+  GAZ.forEach(([t,d])=>put(t,'Gazetted Holiday',d));
+  RES.forEach(([t,d])=>put(t,'Restricted Holiday',d));
+  ONE.forEach(([t,c,d])=>put(t,c,d));
+  SPAN.forEach(([t,c,f,l])=>put(t,c,f,l));
+  DB.holidays2026Seeded=true;DB.iitpkdSeedV2=true;DB.iitpkdSeedV3=true;save();
 }
 
 /* ---------- boot sync gate ----------
