@@ -354,6 +354,38 @@ hr.soft{border:none;border-top:1px solid var(--line);margin:20px 0}
 .del-x{color:var(--faint);cursor:pointer;border:none;background:none;font-size:15px;padding:2px 6px;border-radius:4px}
 .del-x:hover{color:var(--red);background:var(--surface-2)}
 
+/* ---------- research: accordion sections ---------- */
+.acc{border:1px solid var(--line);border-radius:var(--radius);background:rgba(251,250,246,.55);backdrop-filter:blur(20px) saturate(1.25);-webkit-backdrop-filter:blur(20px) saturate(1.25);box-shadow:var(--shadow);margin-bottom:18px;overflow:hidden}
+.acc-head{display:flex;align-items:center;gap:10px;padding:14px 18px;cursor:pointer;user-select:none;border:none;background:none;width:100%;text-align:left;font-family:inherit}
+.acc-head:hover{background:var(--surface-2)}
+.acc-head:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.acc-chevron{color:var(--muted);font-size:11px;transition:transform .15s;flex-shrink:0;width:14px;text-align:center}
+.acc.collapsed .acc-chevron{transform:rotate(-90deg)}
+.acc-title{font-family:'Spectral',serif;font-size:16px;font-weight:500;color:var(--ink)}
+.acc-body{padding:4px 18px 20px}
+.acc.collapsed .acc-body{display:none}
+
+/* ---------- research: faculty process guide (toggle 3) ---------- */
+.proc-picker{flex-wrap:wrap}
+.proc-picker button{white-space:nowrap}
+.proc-sub{flex-wrap:wrap;margin-top:10px}
+.proc-note{display:block;margin-top:8px}
+.proc-flowhead{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:14px 0 10px}
+.proc-steps{display:flex;flex-direction:column;gap:10px}
+.proc-step{display:flex;gap:12px;padding:12px 14px;border:1px solid var(--line);border-radius:8px;background:var(--surface);transition:opacity .15s,border-color .15s}
+.proc-step.done{opacity:.55}
+.proc-step.done .proc-text{text-decoration:line-through;text-decoration-color:var(--faint)}
+.proc-tick{flex-shrink:0;padding-top:2px;cursor:pointer;position:relative}
+.proc-tick input{position:absolute;inset:0;opacity:0;width:22px;height:22px;margin:0;cursor:pointer}
+.tick-box{display:flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:6px;border:1.5px solid var(--line-strong);background:var(--surface);color:#fff;font-size:13px;font-weight:700;pointer-events:none}
+.proc-step.done .tick-box{background:var(--green);border-color:var(--green)}
+.proc-num{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--faint);font-weight:600;margin-bottom:3px}
+.proc-text{font-size:13.5px;line-height:1.5}
+.proc-text b{font-weight:600}
+.proc-text a{text-decoration:underline}
+.proc-forms{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.proc-form-btn{text-decoration:none;font-size:12px;white-space:nowrap}
+
 @media(max-width:720px){
   .app{grid-template-columns:1fr;min-width:0;overflow-x:hidden}
   .sidebar{position:static;height:auto;flex-direction:row;flex-wrap:wrap;align-items:center}
@@ -373,6 +405,13 @@ hr.soft{border:none;border-top:1px solid var(--line);margin:20px 0}
   .ev{font-size:10px;padding:1px 4px}
   .cal-title{min-width:0;font-size:17px}
   .cal-toolbar{gap:8px}
+}
+
+/* ---------- research accordion / process guide: tighter on phones ---------- */
+@media(max-width:720px){
+  .acc-body{padding:4px 12px 16px}
+  .acc-head{padding:12px 14px}
+  .proc-step{padding:10px}
 }
 
 /* ---------- touch devices (iPhone Safari etc.) — desktop untouched ---------- */
@@ -469,31 +508,60 @@ hr.soft{border:none;border-top:1px solid var(--line);margin:20px 0}
     <!-- ============ RESEARCH ============ -->
     <section class="view" id="view-research">
       <div class="eyebrow">Research</div>
-      <div class="page-head">
-        <h1>Projects</h1>
-        <div class="btn-row">
-          <button class="btn btn-sm" id="res-add">+ Add project</button>
-          <button class="btn btn-sm" id="res-addsub">+ Add sub-task</button>
+
+      <!-- toggle 1: projects + gantt (unchanged content) -->
+      <div class="acc" data-acc="proj">
+        <button type="button" class="acc-head" data-acc-toggle="proj"><span class="acc-chevron">&#9662;</span><span class="acc-title">Ongoing projects &amp; timeline</span></button>
+        <div class="acc-body">
+          <div class="page-head">
+            <h1>Projects</h1>
+            <div class="btn-row">
+              <button class="btn btn-sm" id="res-add">+ Add project</button>
+              <button class="btn btn-sm" id="res-addsub">+ Add sub-task</button>
+            </div>
+          </div>
+          <p class="muted" style="margin:0 0 4px">Number rows like 1, 1.1, 1.2.1 — sub-tasks nest and fold under their parent. Percent colours itself.</p>
+          <div class="card" style="overflow-x:auto;margin-top:14px">
+            <table id="res-table">
+              <thead><tr>
+                <th style="width:60px">No.</th><th style="min-width:240px">Project</th><th style="width:64px">Status</th>
+                <th style="width:78px" class="center">%</th><th style="width:40px" class="center">Done</th>
+                <th style="width:74px">Start</th><th style="width:74px">Target</th>
+                <th style="width:180px">Comments</th><th style="width:30px"></th>
+              </tr></thead>
+              <tbody id="res-body"></tbody>
+            </table>
+          </div>
+          <h3 style="margin:26px 0 0;font-size:16px">Timeline</h3>
+          <div class="gantt" id="res-gantt"></div>
         </div>
       </div>
-      <p class="muted" style="margin:0 0 4px">Number rows like 1, 1.1, 1.2.1 — sub-tasks nest and fold under their parent. Percent colours itself.</p>
-      <div class="card" style="overflow-x:auto;margin-top:14px">
-        <table id="res-table">
-          <thead><tr>
-            <th style="width:60px">No.</th><th style="min-width:240px">Project</th><th style="width:64px">Status</th>
-            <th style="width:78px" class="center">%</th><th style="width:40px" class="center">Done</th>
-            <th style="width:74px">Start</th><th style="width:74px">Target</th>
-            <th style="width:180px">Comments</th><th style="width:30px"></th>
-          </tr></thead>
-          <tbody id="res-body"></tbody>
-        </table>
-      </div>
-      <h3 style="margin:26px 0 0;font-size:16px">Timeline</h3>
-      <div class="gantt" id="res-gantt"></div>
 
-      <h3 style="margin:30px 0 0;font-size:16px;display:flex;justify-content:space-between;align-items:center">New on arXiv &middot; hep-th <span style="display:flex;gap:8px"><button class="btn btn-sm" id="arxiv-speak" title="Read today's papers aloud">&#9654; Play</button><button class="btn btn-sm" id="arxiv-refresh">Refresh</button></span></h3>
-      <p class="muted" style="margin:2px 0 0">Today&rsquo;s new submissions only — cross-lists and replacements excluded.</p>
-      <div id="arxiv-list" class="card" style="margin-top:12px"></div>
+      <!-- toggle 2: arXiv feed (unchanged content) -->
+      <div class="acc" data-acc="arxiv">
+        <button type="button" class="acc-head" data-acc-toggle="arxiv"><span class="acc-chevron">&#9662;</span><span class="acc-title">New on arXiv</span></button>
+        <div class="acc-body">
+          <h3 style="margin:0;font-size:16px;display:flex;justify-content:space-between;align-items:center">New on arXiv &middot; hep-th <span style="display:flex;gap:8px"><button class="btn btn-sm" id="arxiv-speak" title="Read today's papers aloud">&#9654; Play</button><button class="btn btn-sm" id="arxiv-refresh">Refresh</button></span></h3>
+          <p class="muted" style="margin:2px 0 0">Today&rsquo;s new submissions only — cross-lists and replacements excluded.</p>
+          <div id="arxiv-list" class="card" style="margin-top:12px"></div>
+        </div>
+      </div>
+
+      <!-- toggle 3: faculty process guide (new) -->
+      <div class="acc collapsed" data-acc="guide">
+        <button type="button" class="acc-head" data-acc-toggle="guide"><span class="acc-chevron">&#9662;</span><span class="acc-title">Faculty process guide</span></button>
+        <div class="acc-body">
+          <p class="muted" style="margin:0 0 14px">IIT Palakkad admin processes, built from the Faculty Handbook. Pick a process, tick a step as you complete it — ticks are remembered until you clear them yourself.</p>
+          <div class="seg proc-picker" id="proc-picker">
+            <button type="button" data-flow="conf">Conference / Visit</button>
+            <button type="button" data-flow="leave">Personal Leave</button>
+            <button type="button" data-flow="visitor">Invite Visitor</button>
+            <button type="button" data-flow="arrange">Arrange Conference</button>
+          </div>
+          <div class="seg proc-sub" id="proc-sub"></div>
+          <div id="proc-flow"></div>
+        </div>
+      </div>
     </section>
 
     <!-- ============ TEACHING ============ -->
@@ -700,7 +768,8 @@ const DEFAULT={
   weeklyRem:[], monthlyRem:[], remWeekKey:'', remMonthKey:'', remSeeded:false,
   catColors:{}, holidays2026Seeded:false, iitpkdSeedV2:false, iitpkdSeedV3:false,
   teachPage:0, teachNames:['Lecture 1','Lecture 2'], readingPage:0,
-  sync:{token:'',gistId:''}
+  sync:{token:'',gistId:''},
+  resAcc:{proj:true,arxiv:true,guide:false}, procState:{flow:'conf',subs:{}}, procTicks:{}
 };
 let DB=load();
 function load(){try{const r=JSON.parse(localStorage.getItem(KEY));return r?Object.assign(structuredClone(DEFAULT),r):seed();}catch(e){return seed();}}
@@ -1110,6 +1179,8 @@ function renderResearch(){
   }).join('')||`<tr><td colspan="9" class="empty">No projects yet — add one.</td></tr>`;
   renderResGantt();
   if(!arxivLoaded)loadArxiv();
+  applyAccState();
+  renderProcGuide();
 }
 document.getElementById('res-body').addEventListener('input',e=>{
   const tr=e.target.closest('tr');if(!tr)return;const r=DB.research.find(x=>x.id===tr.dataset.id);if(!r)return;
@@ -1176,6 +1247,167 @@ function renderResGantt(){
   }).join('');
   el.innerHTML=head+bars+'</div>';
 }
+
+/* ---------- research: accordion open/closed state ---------- */
+function isAccOpen(key){return DB.resAcc&&(key in DB.resAcc)?!!DB.resAcc[key]:key!=='guide';}
+function applyAccState(){
+  document.querySelectorAll('#view-research .acc').forEach(acc=>{acc.classList.toggle('collapsed',!isAccOpen(acc.dataset.acc));});
+}
+document.querySelectorAll('#view-research .acc-head').forEach(h=>{
+  h.addEventListener('click',()=>{
+    const key=h.dataset.accToggle;
+    DB.resAcc=DB.resAcc||{};
+    DB.resAcc[key]=!isAccOpen(key);
+    save();applyAccState();
+  });
+});
+
+/* ---------- research: faculty process guide (handbook-derived) ----------
+   Forms link straight to the actual IIT Palakkad / Drive URLs printed in the
+   Faculty Handbook (2026 ed.) — never a hosted copy, so they stay current. */
+const F_CPDA_PERMISSION='https://drive.google.com/file/d/1Uxw84YTrKzIiZdsCb4aNu194O5tPClte/view';
+const F_CPDA_TA_CLAIM='https://drive.google.com/file/d/1E5r5Sk81E2KWgVykqMulYLvkDQXBwnzd/view';
+const F_TRAVEL_TA='https://drive.google.com/file/d/12q1jjjakZAfV_IyF5bS9Au_XcEEfuIl4/view?usp=sharing';
+const F_FORM_A1='https://icsr.iitpkd.ac.in/sites/default/files/Form-A1.pdf';
+const F_FORM_A2='https://icsr.iitpkd.ac.in/sites/default/files/Form-A2_1.pdf';
+const F_LEAVE_SHORT='https://drive.google.com/file/d/1-ENU5OO596J_4OOHHjBtlPeGJk1GJqKi/view';
+const F_LEAVE_LONG='https://drive.google.com/file/d/1eC-o6RhTwLfjToB1iTem8Kip9MBuDEPs/view';
+const F_NOC_FOREIGN='https://drive.google.com/file/d/1jTxwWUnSMpWLYc8jP6F0yUPF4QWzNqUd/view';
+const F_IAR_SITE='https://iar.iitpkd.ac.in';
+const F_VISA_GUIDE='https://ir.iitpkd.ac.in/node/15';
+const F_MRBS='https://mrbs.iitpkd.ac.in';
+const F_PURCHASE_PROC='https://iitpkd.ac.in/purchase-procedure-and-annexures';
+
+function procConfSteps(sub){
+  const abroad=sub==='foreign';
+  return [
+    {t:'Secure the invitation or paper acceptance, and note which pot will fund the trip \u2014 CPDA or a sponsored project.'},
+    {t:'Get your HoD\u2019s endorsement on the travel request.'},
+    {t:'Fill the funding-approval proforma for whichever route applies.',forms:[{label:'CPDA \u2014 permission to attend conference',url:F_CPDA_PERMISSION},{label:'Project funds \u2014 Form-A1',url:F_FORM_A1}]},
+    abroad
+      ? {t:'Get the <b>Director\u2019s</b> approval \u2014 mandatory for travel abroad. Additional statutory/administrative clearances may be needed depending on the visit.',forms:[{label:'Travel Prior Approval / TA form',url:F_TRAVEL_TA}]}
+      : {t:'Get the <b>Dean (Administration)</b>\u2019s approval for domestic official travel, with your HoD\u2019s endorsement attached.',forms:[{label:'Travel Prior Approval / TA form',url:F_TRAVEL_TA}]},
+    {t:'Book tickets only through the authorised agents (BLCL / ATT / IRCTC), or email <a href="mailto:travels@iitpkd.ac.in">travels@iitpkd.ac.in</a> if the Institute is arranging it.'},
+    {t:'If funded by CPDA, request a travel advance if you need one \u2014 up to 90% of fare, 50% of DA/accommodation, 100% of registration/visa/insurance.'},
+    {t:'Attend the conference \u2014 keep boarding passes, receipts, and the conference certificate.'},
+    {t:'Submit your tour report to the Director \u2014 mandatory before CPDA settlement.'},
+    {t:'Submit the claim for reimbursement.',forms:[{label:'CPDA \u2014 TA claim form',url:F_CPDA_TA_CLAIM},{label:'Project funds \u2014 Form-A2',url:F_FORM_A2}]}
+  ];
+}
+function procLeaveSteps(sub){
+  const abroad=sub==='abroad';
+  const steps=[
+    {t:'Decide which leave type applies (CL / RH / SCL / EL / HPL / Commuted / EOL / LND / Maternity / Paternity / On-Duty / Project SCL / CCL) and check your balance with your HoD or the Administration Section.'},
+    {t:'Download and fill the correct application form.',forms:[{label:'CL / RH / SCL / On-Duty form',url:F_LEAVE_SHORT},{label:'EL / HPL / EOL / Commuted / Vacation / Maternity / Paternity form',url:F_LEAVE_LONG}]},
+    {t:'Get your HoD\u2019s recommendation on the form.'},
+    {t:'Submit the form to the Administration Section (Faculty Leave Matters) \u2014 by email or via Fedena.'}
+  ];
+  if(abroad){
+    steps.push({t:'Submit the \u201CUndertaking for Private Foreign Visit\u201D for the Director\u2019s approval \u2014 mandatory before booking any travel abroad.',forms:[{label:'Undertaking for Private Foreign Visit',url:F_NOC_FOREIGN}]});
+    steps.push({t:'Wait for both the leave sanction and the NOC approval before you depart.'});
+  }else{
+    steps.push({t:'Wait for the leave to be sanctioned by the competent authority before you leave headquarters.'});
+  }
+  steps.push({t:'Resume duty on return; attach a medical certificate if it was medical leave and you haven\u2019t already submitted one.'});
+  return steps;
+}
+function procVisitorSteps(sub){
+  if(sub==='foreign')return [
+    {t:'Identify the visitor and confirm their name, affiliation, purpose, and tentative dates.'},
+    {t:'Email the IAR Office \u2014 <a href="mailto:iar@iitpkd.ac.in,ir_office@iitpkd.ac.in">iar@iitpkd.ac.in / ir_office@iitpkd.ac.in</a> \u2014 with the visitor\u2019s name, affiliation, a copy of their passport, purpose, and duration, <b>before</b> making any travel arrangements.',forms:[{label:'IAR Office',url:F_IAR_SITE}]},
+    {t:'Make sure the visitor applies for the correct visa category \u2014 a tourist visa does not cover academic, research, or teaching activity.',forms:[{label:'Visa guidelines',url:F_VISA_GUIDE}]},
+    {t:'Book Guest House accommodation if needed \u2014 email <a href="mailto:ghm@iitpkd.ac.in">ghm@iitpkd.ac.in</a>, cc <a href="mailto:fc_gh@iitpkd.ac.in">fc_gh@iitpkd.ac.in</a>, with the expected arrival time.'},
+    {t:'Inform Security in advance so a Visitor\u2019s Pass can be issued on arrival.'},
+    {t:'If the Institute is arranging or funding the visitor\u2019s travel, coordinate with <a href="mailto:travels@iitpkd.ac.in">travels@iitpkd.ac.in</a>.'},
+    {t:'Host the visit \u2014 the visitor completes Guest House check-in/out formalities if staying on campus.'}
+  ];
+  return [
+    {t:'Identify the visitor and confirm purpose and dates.'},
+    {t:'Book Guest House accommodation if needed \u2014 email <a href="mailto:ghm@iitpkd.ac.in">ghm@iitpkd.ac.in</a>, cc <a href="mailto:fc_gh@iitpkd.ac.in">fc_gh@iitpkd.ac.in</a>.'},
+    {t:'Inform Security in advance for a visitor\u2019s pass.'},
+    {t:'If the Institute is funding the travel, coordinate with <a href="mailto:travels@iitpkd.ac.in">travels@iitpkd.ac.in</a>.'},
+    {t:'Host the visit.'}
+  ];
+}
+function procArrangeSteps(sub){
+  const steps=[];
+  steps.push(sub==='external'
+    ? {t:'Decide the scope and funding, and register the event with the Centre for Continuing Education (CCE) \u2014 <a href="mailto:cce@iitpkd.ac.in">cce@iitpkd.ac.in</a> \u2014 since it involves external funds or participants.'}
+    : {t:'Decide the scope and funding \u2014 a purely internal, department-funded event doesn\u2019t need CCE registration.'});
+  steps.push({t:'Book rooms via the MRBS portal, or for larger events coordinate venue/setup with EWD \u2014 <a href="mailto:ewd@iitpkd.ac.in">ewd@iitpkd.ac.in</a>.',forms:[{label:'MRBS booking portal',url:F_MRBS}]});
+  steps.push({t:'Book Guest House rooms for outstation speakers \u2014 email <a href="mailto:ghm@iitpkd.ac.in">ghm@iitpkd.ac.in</a>, cc <a href="mailto:fc_gh@iitpkd.ac.in">fc_gh@iitpkd.ac.in</a>.'});
+  steps.push({t:'If any speaker is a foreign national, also work through the Invite Visitor (Foreign) steps for them.'});
+  steps.push({t:'Arrange publicity with the Media &amp; Website Section \u2014 <a href="mailto:media@iitpkd.ac.in">media@iitpkd.ac.in</a>.'});
+  steps.push({t:'Handle procurement (banners, catering, materials) via GeM / Stores &amp; Purchase, or through IC&amp;SR if grant-funded.',forms:[{label:'Purchase procedure &amp; annexures',url:F_PURCHASE_PROC}]});
+  steps.push({t:'Notify Security ahead of expected footfall and vehicles.'});
+  steps.push({t:'After the event, settle bills through Finance &amp; Accounts / IC&amp;SR, and file a report if it was grant-funded.'});
+  return steps;
+}
+const PROC_NOTE={
+  conf:'From the CPDA, travel-approval, and IC&amp;SR sections of the handbook.',
+  leave:'From the Leave Rules and travel-approval sections of the handbook.',
+  visitor:'Steps 1\u20133 are the handbook\u2019s own numbered foreign-national procedure; the rest are drawn from the Guest House &amp; Security sections.',
+  arrange:'The handbook has no single arrange-a-conference procedure \u2014 assembled from the CCE, MRBS, EWD, Guest House, Media &amp; IC&amp;SR sections.'
+};
+const PROC_FLOWS=[
+  {id:'conf',label:'Conference / Visit',subs:[{id:'domestic',label:'Domestic'},{id:'foreign',label:'Foreign'}],steps:procConfSteps},
+  {id:'leave',label:'Personal Leave',subs:[{id:'india',label:'Within India'},{id:'abroad',label:'Abroad'}],steps:procLeaveSteps},
+  {id:'visitor',label:'Invite Visitor',subs:[{id:'foreign',label:'Foreign visitor'},{id:'domestic',label:'Domestic visitor'}],steps:procVisitorSteps},
+  {id:'arrange',label:'Arrange Conference',subs:[{id:'external',label:'Externally funded'},{id:'internal',label:'Internal / dept-funded'}],steps:procArrangeSteps}
+];
+function procFlow(){return PROC_FLOWS.find(f=>f.id===DB.procState.flow)||PROC_FLOWS[0];}
+function procSub(flow){return (DB.procState.subs&&DB.procState.subs[flow.id])||flow.subs[0].id;}
+function procStepKey(flowId,subId,i){return flowId+':'+subId+':'+i;}
+function procIsDone(flowId,subId,i){return !!(DB.procTicks&&DB.procTicks[procStepKey(flowId,subId,i)]);}
+function renderProcGuide(){
+  DB.procState=DB.procState||{flow:'conf',subs:{}};
+  const flow=procFlow(),sub=procSub(flow),steps=flow.steps(sub);
+  document.querySelectorAll('#proc-picker button').forEach(b=>b.classList.toggle('active',b.dataset.flow===flow.id));
+  document.getElementById('proc-sub').innerHTML=flow.subs.map(s=>`<button type="button" data-sub="${esc(s.id)}" class="${s.id===sub?'active':''}">${esc(s.label)}</button>`).join('');
+  const doneCount=steps.filter((_,i)=>procIsDone(flow.id,sub,i)).length;
+  document.getElementById('proc-flow').innerHTML=`
+    <div class="proc-flowhead">
+      <span class="muted proc-note">${PROC_NOTE[flow.id]||''}</span>
+      <span class="muted" style="margin-left:auto;font-size:12.5px;white-space:nowrap">${doneCount}/${steps.length} done</span>
+      <button type="button" class="btn btn-sm btn-ghost" id="proc-reset">Reset ticks</button>
+    </div>
+    <div class="proc-steps">${steps.map((s,i)=>{
+      const d=procIsDone(flow.id,sub,i);
+      return `<div class="proc-step ${d?'done':''}">
+        <label class="proc-tick"><input type="checkbox" data-step-i="${i}" ${d?'checked':''}><span class="tick-box">${d?'\u2713':''}</span></label>
+        <div class="proc-body">
+          <div class="proc-num">Step ${i+1}</div>
+          <div class="proc-text">${s.t}</div>
+          ${s.forms&&s.forms.length?`<div class="proc-forms">${s.forms.map(f=>`<a class="btn btn-sm proc-form-btn" href="${f.url}" target="_blank" rel="noopener">\u2913 ${esc(f.label)}</a>`).join('')}</div>`:''}
+        </div>
+      </div>`;
+    }).join('')}</div>`;
+}
+document.getElementById('proc-picker').addEventListener('click',e=>{
+  const b=e.target.closest('button[data-flow]');if(!b)return;
+  DB.procState=DB.procState||{flow:'conf',subs:{}};DB.procState.flow=b.dataset.flow;save();renderProcGuide();
+});
+document.getElementById('proc-sub').addEventListener('click',e=>{
+  const b=e.target.closest('button[data-sub]');if(!b)return;
+  DB.procState=DB.procState||{flow:'conf',subs:{}};DB.procState.subs=DB.procState.subs||{};
+  DB.procState.subs[DB.procState.flow]=b.dataset.sub;save();renderProcGuide();
+});
+document.getElementById('proc-flow').addEventListener('click',e=>{
+  const flow=procFlow(),sub=procSub(flow);
+  const reset=e.target.closest('#proc-reset');
+  if(reset){
+    const prefix=flow.id+':'+sub+':';
+    Object.keys(DB.procTicks||{}).forEach(k=>{if(k.indexOf(prefix)===0)delete DB.procTicks[k];});
+    save();renderProcGuide();toast('Ticks cleared');return;
+  }
+  const chk=e.target.closest('input[data-step-i]');
+  if(chk){
+    DB.procTicks=DB.procTicks||{};
+    const k=procStepKey(flow.id,sub,+chk.dataset.stepI);
+    if(DB.procTicks[k])delete DB.procTicks[k];else DB.procTicks[k]=true;
+    save();renderProcGuide();
+  }
+});
 
 /* ---- arXiv hep-th new list — read from this site's own hep-th.json ----
    The listing is built server-side by .github/workflows/update-arxiv.yml, on a
