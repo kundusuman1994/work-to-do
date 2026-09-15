@@ -279,6 +279,23 @@ hr.soft{border:none;border-top:1px solid var(--line);margin:20px 0}
 .ax-abs{color:var(--muted);font-size:12.5px;line-height:1.5}
 .ax-head{padding:8px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line);color:var(--muted);font-size:12.5px;font-weight:500}
 
+/* ---------- popular science shelf ---------- */
+.cc-hero{display:flex;gap:18px;align-items:flex-start;padding:18px 20px}
+.cc-cover{display:block;border-radius:6px;border:1px solid var(--line-strong);box-shadow:var(--shadow);background:var(--surface-2)}
+.cc-hero .cc-cover{width:150px;flex-shrink:0}
+.cc-meta{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
+.cc-kicker{font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--faint);font-weight:600}
+.cc-issue{font-family:'Spectral',serif;font-size:22px;font-weight:500;letter-spacing:-.01em}
+.cc-hero .btn{align-self:flex-start;margin-top:4px;text-decoration:none}
+.cc-prev{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;padding:0 20px 18px}
+@media(max-width:720px){.cc-prev{grid-template-columns:repeat(2,1fr)}.cc-hero .cc-cover{width:112px}.cc-issue{font-size:19px}}
+.cc-prev a{text-decoration:none;color:inherit;display:block}
+.cc-prev .cc-cover{width:100%;transition:transform .12s}
+.cc-prev a:hover .cc-cover{transform:translateY(-2px)}
+.cc-prev .cc-cap{font-size:12px;color:var(--muted);margin-top:6px;font-weight:500}
+.cc-prev a:hover .cc-cap{color:var(--accent)}
+.cc-foot{border-top:1px solid var(--line);padding:8px 20px;font-size:12px;color:var(--faint);display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+
 /* ---------- modal ---------- */
 .modal-bg{position:fixed;inset:0;background:rgba(42,38,32,.32);display:none;align-items:center;justify-content:center;z-index:50;padding:20px}
 .modal-bg.show{display:flex}
@@ -523,15 +540,31 @@ hr.soft{border:none;border-top:1px solid var(--line);margin:20px 0}
     <!-- ============ READING ============ -->
     <section class="view" id="view-reading">
       <div class="eyebrow">Reading</div>
-      <div class="page-head"><h1>Reading list</h1></div>
-      <p class="muted" style="margin:0 0 14px">Papers you tick on the arXiv feed land here, newest first. Add your own notes in the comment column.</p>
-      <div class="card" style="overflow-x:auto">
-        <table id="reading-table">
-          <thead><tr>
-            <th style="width:55%">Paper</th><th style="width:45%">Comment</th><th style="width:30px"></th>
-          </tr></thead>
-          <tbody id="reading-body"></tbody>
-        </table>
+      <div class="page-head"><h1>Reading list</h1>
+        <div class="seg" id="reading-pages">
+          <button data-rpage="0" class="active">Papers</button>
+          <button data-rpage="1">Popular science</button>
+        </div>
+      </div>
+
+      <div id="reading-papers">
+        <p class="muted" style="margin:0 0 14px">Papers you tick on the arXiv feed land here, newest first. Add your own notes in the comment column.</p>
+        <div class="card" style="overflow-x:auto">
+          <table id="reading-table">
+            <thead><tr>
+              <th style="width:55%">Paper</th><th style="width:45%">Comment</th><th style="width:30px"></th>
+            </tr></thead>
+            <tbody id="reading-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="reading-popsci" style="display:none">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin:0 0 14px">
+          <p class="muted" style="margin:0"><em>CERN Courier</em> &mdash; the current issue and the four before it. Covers and PDFs are served by cerncourier.com.</p>
+          <button class="btn btn-sm" id="cc-refresh" style="flex-shrink:0">Refresh</button>
+        </div>
+        <div id="cc-list"></div>
       </div>
     </section>
 
@@ -663,10 +696,10 @@ const COLORS=['#B4603F','#5B7B9A','#7FA663','#C79A3C','#8A6BA8','#4C8C86'];
 const LEC_COLOR='#5B7B9A';
 const DEFAULT={
   settings:{semesterStart:'',totalWeeks:16},
-  notes:[], events:[], research:[], teaching:[], review:[], reviewWeek:'', reading:[], arxivCache:null,
+  notes:[], events:[], research:[], teaching:[], review:[], reviewWeek:'', reading:[], arxivCache:null, ccCache:null,
   weeklyRem:[], monthlyRem:[], remWeekKey:'', remMonthKey:'', remSeeded:false,
   catColors:{}, holidays2026Seeded:false, iitpkdSeedV2:false, iitpkdSeedV3:false,
-  teachPage:0, teachNames:['Lecture 1','Lecture 2'],
+  teachPage:0, teachNames:['Lecture 1','Lecture 2'], readingPage:0,
   sync:{token:'',gistId:''}
 };
 let DB=load();
@@ -1472,8 +1505,74 @@ function renderPreview(md){
 }
 document.getElementById('note-add').onclick=()=>{const n={id:uid(),title:'',body:'',updated:Date.now()};DB.notes.push(n);curNote=n.id;noteEditing=true;save();renderNotes();setTimeout(()=>document.getElementById('note-title')?.focus(),40);};
 
+/* ---- CERN Courier shelf ----
+   .github/workflows/update-cern-courier.yml reads the magazine archive page on a
+   runner (where CORS does not apply) and commits cern-courier.json here. The page
+   only ever fetches from its own origin. The covers and the editions themselves are
+   not copied into the repo - the JSON holds cerncourier.com URLs and the browser
+   loads them directly, so nothing here goes stale when they re-upload a file. */
+const CC_JSON='./cern-courier.json';
+let ccLoaded=false;
+function ccPaint(data,note){
+  const el=document.getElementById('cc-list');if(!el)return;
+  const list=(data&&Array.isArray(data.issues)?data.issues:[]).filter(i=>i&&i.pdf);
+  if(!list.length){
+    el.innerHTML='<div class="card"><div class="empty" style="padding:16px">'+esc(note||'No issues listed yet')+
+      '. <a href="#" id="cc-retry">Try again</a>, or open <a href="https://cerncourier.com/p/magazine/" target="_blank" rel="noopener">the magazine page</a> directly.</div></div>';
+    const r=document.getElementById('cc-retry');if(r)r.onclick=e=>{e.preventDefault();loadCC(true);};
+    return;
+  }
+  const cover=i=>i.cover?`<img class="cc-cover" src="${esc(i.cover)}" alt="${esc(i.label||'')} cover" loading="lazy">`
+                        :'<div class="cc-cover" style="aspect-ratio:3/4"></div>';
+  const cur=list[0],rest=list.slice(1);
+  let html='<div class="card"><div class="cc-hero">'+
+    `<a href="${esc(cur.pdf)}" target="_blank" rel="noopener">${cover(cur)}</a>`+
+    '<div class="cc-meta"><div class="cc-kicker">Current issue</div>'+
+    `<div class="cc-issue">${esc(cur.label||'Latest edition')}</div>`+
+    '<div class="muted" style="font-size:12.5px">CERN Courier &middot; digital edition (PDF)</div>'+
+    `<a class="btn btn-primary btn-sm" href="${esc(cur.pdf)}" target="_blank" rel="noopener">Read here</a>`+
+    '</div></div>';
+  if(rest.length)html+='<div class="cc-prev">'+rest.map(i=>
+    `<a href="${esc(i.pdf)}" target="_blank" rel="noopener" title="Open ${esc(i.label||'')} (PDF)">${cover(i)}<div class="cc-cap">${esc(i.label||'')}</div></a>`).join('')+'</div>';
+  html+=`<div class="cc-foot"><span>${note?esc(note)+' &middot; ':''}${list.length} issue${list.length===1?'':'s'}</span>`+
+        '<span><a href="https://cerncourier.com/p/magazine/" target="_blank" rel="noopener">Full archive</a> &middot; <a href="#" id="cc-retry">refresh</a></span></div></div>';
+  el.innerHTML=html;
+  const r=document.getElementById('cc-retry');if(r)r.onclick=e=>{e.preventDefault();loadCC(true);};
+}
+async function loadCC(force){
+  const el=document.getElementById('cc-list');if(!el)return;
+  const cache=DB.ccCache;
+  const hasCache=!!(cache&&cache.issues&&cache.issues.length);
+  /* the listing changes once every two months, so a cache is almost always the
+     right answer; only go to the network on the first load of a session or on Refresh */
+  if(!force&&hasCache&&ccLoaded){ccPaint(cache,'');return;}
+  if(!hasCache)el.innerHTML='<div class="card"><div class="empty" style="padding:16px">Loading the current issue\u2026</div></div>';
+  else ccPaint(cache,'');
+  let data=null,failed='';
+  try{
+    const res=await fetch(CC_JSON+'?_='+Date.now(),{cache:'no-store'});
+    if(res.ok)data=await res.json();
+    else failed=res.status===404?'cern-courier.json not published yet':'listing file unavailable';
+  }catch(e){failed='listing file unreadable';}
+  if(!data||!Array.isArray(data.issues)||!data.issues.length){
+    if(hasCache){ccPaint(cache,failed||'listing file was empty');ccLoaded=true;return;}
+    ccPaint(null,failed||'listing file was empty');return;
+  }
+  DB.ccCache={v:1,issues:data.issues.slice(0,5),fetched:data.fetched||''};
+  saveNow();
+  ccPaint(DB.ccCache,'');
+  ccLoaded=true;
+}
+const ccBtn=document.getElementById('cc-refresh');if(ccBtn)ccBtn.onclick=()=>loadCC(true);
+
 /* ======================= READING ======================= */
 function renderReading(){
+  /* the section holds two independent panes; only the visible one is built */
+  const pg=DB.readingPage||0;
+  document.querySelectorAll('#reading-pages button').forEach(b=>b.classList.toggle('active',+b.dataset.rpage===pg));
+  document.getElementById('reading-papers').style.display=pg?'none':'';
+  document.getElementById('reading-popsci').style.display=pg?'':'none';
+  if(pg){loadCC(false);return;}
   const body=document.getElementById('reading-body');
   const rows=[...DB.reading].sort((a,b)=>(b.added||0)-(a.added||0));
   body.innerHTML=rows.map(r=>`<tr data-id="${r.id}">
@@ -1500,6 +1599,10 @@ function fitComments(){
   });
 }
 let fitT;window.addEventListener('resize',()=>{clearTimeout(fitT);fitT=setTimeout(()=>{if(curView==='reading')fitComments();},150);});
+document.getElementById('reading-pages').addEventListener('click',e=>{
+  const b=e.target.closest('button[data-rpage]');if(!b)return;
+  DB.readingPage=+b.dataset.rpage;save();renderReading();
+});
 document.getElementById('reading-body').addEventListener('input',e=>{
   const tr=e.target.closest('tr');if(!tr)return;const r=DB.reading.find(x=>x.id===tr.dataset.id);if(!r)return;
   if(e.target.dataset.f==='comment'){r.comment=e.target.value;growComment(e.target);save();}
@@ -1549,7 +1652,7 @@ document.getElementById('imp-file').onchange=e=>{const f=e.target.files[0];if(!f
   const t=DB.sync.token,g=DB.sync.gistId;
   DB=Object.assign(structuredClone(DEFAULT),JSON.parse(r.result));
   DB.sync.token=t;DB.sync.gistId=g;
-  saveNow();curNote=null;arxivLoaded=false;
+  saveNow();curNote=null;arxivLoaded=false;ccLoaded=false;
   dirty=true;schedulePush();      /* treat an import as an edit: it should reach the Gist */
   applySeeds();                   /* an old backup may predate a seed */
   render();toast('Backup loaded');
@@ -1573,8 +1676,9 @@ async function syncPush(manual){
     if(!confirm('This copy was never pulled from the Gist in this session.\n\nPushing may overwrite newer data from another device. Push anyway?'))return false;
   }
   syncing=true;ghStatus('Pushing…');pushFabSet('pushing');
-  /* arxivCache is a per-device scratch copy — keep it out of the Gist so the poll stays light */
-  const safe=Object.assign({},DB,{sync:{token:'',gistId:''},arxivCache:null});
+  /* arxivCache / ccCache are per-device scratch copies — keep them out of the Gist
+     so the poll stays light */
+  const safe=Object.assign({},DB,{sync:{token:'',gistId:''},arxivCache:null,ccCache:null});
   const payload={description:'Desk data',public:false,files:{'desk-data.json':{content:JSON.stringify(safe)}}};
   try{
     const url='https://api.github.com/gists'+(DB.sync.gistId?'/'+DB.sync.gistId:'');
@@ -1610,14 +1714,15 @@ async function syncPull(quiet){
     if(!f||!f.content)throw new Error('desk-data.json missing');
     let inc;try{inc=JSON.parse(f.content);}catch(_){throw new Error('corrupt JSON');}
     if(!inc||typeof inc!=='object'||Array.isArray(inc))throw new Error('unexpected data');
-    const tok2=DB.sync.token,gid2=DB.sync.gistId,cache2=DB.arxivCache;
+    const tok2=DB.sync.token,gid2=DB.sync.gistId,cache2=DB.arxivCache,cc2=DB.ccCache;
     DB=Object.assign(structuredClone(DEFAULT),inc);
     DB.sync.token=tok2;DB.sync.gistId=gid2;
     DB.arxivCache=cache2||inc.arxivCache||null;      /* the arXiv cache is local, not synced */
+    DB.ccCache=cc2||inc.ccCache||null;               /* likewise the CERN Courier shelf */
     saveNow();
     pulledOk=true;dirty=false;clearTimeout(pushT);pushFabSet('hide');   /* fresh copy — nothing pending */
     remoteRev=j.updated_at||null;                    /* the revision we are now in step with */
-    curNote=null;arxivLoaded=false;
+    curNote=null;arxivLoaded=false;ccLoaded=false;
     /* the copy we just pulled may predate a seed — apply it now, on top of the
        fresh data, and let the normal dirty/push path carry it back to the Gist */
     applySeeds();
