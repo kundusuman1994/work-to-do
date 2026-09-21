@@ -1,7 +1,12 @@
 {
- "fetched": "2026-09-15T05:20:00Z",
+ "fetched": "2026-09-21T10:45:37Z",
  "source": "https://cerncourier.com/p/magazine/",
  "issues": [
+  {
+   "label": "",
+   "pdf": "https://cerncourier.com/wp-content/uploads/2026/09/CERNCourier2026SepOctdigitaledition.pdf",
+   "cover": "https://cerncourier.com/wp-content/uploads/2026/09/CCSepOct26_COVER_thumbnail.jpg"
+  },
   {
    "label": "Jul/Aug 2026",
    "pdf": "https://cerncourier.com/wp-content/uploads/2026/07/CERNCourier2026JulAug-digitaledition.pdf",
@@ -21,11 +26,6 @@
    "label": "Jan/Feb 2026",
    "pdf": "https://cerncourier.com/wp-content/uploads/2026/01/CERNCourier2026JanFeb-digitaledition.pdf",
    "cover": "https://cerncourier.com/wp-content/uploads/2026/01/CCJanFeb26_COVER_thumbnail.jpg"
-  },
-  {
-   "label": "Nov/Dec 2025",
-   "pdf": "https://cerncourier.com/wp-content/uploads/2025/11/CERNCourier2025NovDec-digitaledition.pdf",
-   "cover": "https://cerncourier.com/wp-content/uploads/2025/10/CCNovDec25_pOFCL.jpg"
   }
  ]
 }
