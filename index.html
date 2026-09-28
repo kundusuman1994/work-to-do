@@ -616,7 +616,10 @@ hr.soft{border:none;border-top:1px solid var(--line);margin:20px 0}
       </div>
 
       <div id="reading-papers">
-        <p class="muted" style="margin:0 0 14px">Papers you tick on the arXiv feed land here, newest first. Add your own notes in the comment column.</p>
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin:0 0 14px">
+          <p class="muted" style="margin:0">Papers you tick on the arXiv feed land here, and older ones can be added straight by their arXiv number. Sorted by arXiv date — newest first.</p>
+          <button class="btn btn-primary btn-sm" id="reading-addax" title="Add a paper by its arXiv number" style="flex-shrink:0">+ arXiv number</button>
+        </div>
         <div class="card" style="overflow-x:auto">
           <table id="reading-table">
             <thead><tr>
@@ -737,6 +740,20 @@ hr.soft{border:none;border-top:1px solid var(--line);margin:20px 0}
   </div>
 </div>
 
+<!-- reading list: add a paper by arXiv number -->
+<div class="modal-bg" id="axadd-bg">
+  <div class="modal" style="width:430px">
+    <h3>Add a paper by arXiv number</h3>
+    <div class="field"><label class="fld">arXiv number</label><input type="text" id="axadd-id" placeholder="1909.00919"></div>
+    <p class="muted" style="margin:-6px 0 0;font-size:12.5px">New style (<code>1909.00919</code>) or old style (<code>hep-th/9711200</code>). A full arXiv link works too, and several numbers can be separated by commas or spaces.</p>
+    <div class="gate-err" id="axadd-err"></div>
+    <div class="modal-foot">
+      <span></span>
+      <div class="btn-row"><button class="btn btn-sm" id="axadd-cancel">Cancel</button><button class="btn btn-primary btn-sm" id="axadd-save">Add to Reading</button></div>
+    </div>
+  </div>
+</div>
+
 <!-- boot sync gate -->
 <div class="modal-bg" id="gate-bg">
   <div class="modal" style="width:400px;text-align:center">
@@ -823,9 +840,9 @@ function pushFabSet(mode){
   const f=document.getElementById('push-fab');if(!f)return;
   const l=document.getElementById('push-fab-label');
   if(mode==='hide'||!DB.sync.token){f.classList.remove('show');f.disabled=false;return;}
-  if(mode==='pushing'){l.textContent='Pushing\u2026';f.disabled=true;f.classList.add('show');return;}
-  if(mode==='failed'){l.textContent='Push failed \u2014 retry';f.disabled=false;f.classList.add('show');return;}
-  l.textContent=pulledOk?'Push':'Push \u00b7 not synced';
+  if(mode==='pushing'){l.textContent='Pushing…';f.disabled=true;f.classList.add('show');return;}
+  if(mode==='failed'){l.textContent='Push failed — retry';f.disabled=false;f.classList.add('show');return;}
+  l.textContent=pulledOk?'Push':'Push · not synced';
   f.disabled=false;f.classList.add('show');
 }
 function seed(){
@@ -838,7 +855,7 @@ function seed(){
     {id:uid(),number:'1.2',title:'Exact calculation',status:'Ongoing',percent:10,done:false,start:'',target:'',comments:'pinch-off singularity'},
     {id:uid(),number:'2',title:'String theory for 2D QCD II',status:'Almost done',percent:95,done:false,start:iso(new Date(t.getFullYear(),t.getMonth()-1,1)),target:iso(new Date(t.getFullYear(),t.getMonth(),20)),comments:'proofs stage'}
   ];
-  d.review=[{id:uid(),item:'Review research progress & update %',done:false},{id:uid(),item:'Plan next week\u2019s lectures',done:false},{id:uid(),item:'Prep upcoming classes',done:false},{id:uid(),item:'Clear email & admin',done:false},{id:uid(),item:'One deep-work block scheduled',done:false}];
+  d.review=[{id:uid(),item:'Review research progress & update %',done:false},{id:uid(),item:'Plan next week’s lectures',done:false},{id:uid(),item:'Prep upcoming classes',done:false},{id:uid(),item:'Clear email & admin',done:false},{id:uid(),item:'One deep-work block scheduled',done:false}];
   localStorage.setItem(KEY,JSON.stringify(d));
   return d;
 }
@@ -956,7 +973,7 @@ function expandEvents(rangeStart,rangeEnd){
 }
 /* ---- teaching lectures as calendar events ---- */
 function lecDate(t){if(!t.date)return null;const p=t.date.split('-').map(Number);let hh=9,mm=0;if(t.time){const q=t.time.split(':');hh=+q[0]||0;mm=+q[1]||0;}return new Date(p[0],p[1]-1,p[2],hh,mm);}
-function lecTitle(t){const nm=(DB.teachNames&&DB.teachNames[t.page||0])||'Lecture';return (t.course||nm)+(t.topic?' \u00b7 '+t.topic:'');}
+function lecTitle(t){const nm=(DB.teachNames&&DB.teachNames[t.page||0])||'Lecture';return (t.course||nm)+(t.topic?' · '+t.topic:'');}
 function teachingEvents(rangeStart,rangeEnd){
   const out=[];
   for(const t of DB.teaching){
@@ -978,7 +995,7 @@ function gotoLecture(page){
 function pctBand(p){return p>=67?'green':p>=34?'amber':'red';}
 function renderToday(){
   const now=new Date();
-  document.getElementById('today-eyebrow').textContent=DOW[now.getDay()]+' \u00b7 '+now.getDate()+' '+MON[now.getMonth()]+' '+now.getFullYear();
+  document.getElementById('today-eyebrow').textContent=DOW[now.getDay()]+' · '+now.getDate()+' '+MON[now.getMonth()]+' '+now.getFullYear();
   const hr=now.getHours();
   document.getElementById('today-title').textContent=(hr<12?'Good morning':hr<17?'Good afternoon':'Good evening')+', Suman.';
   // semester
@@ -998,7 +1015,7 @@ function renderToday(){
   // prep to finish: upcoming (next 7d incl today) not prepped, + past not prepped
   const prep=DB.teaching.filter(t=>t.date&&!t.prepDone).map(t=>({t,dt:parseYMD(t.date)}))
     .filter(o=>o.dt>=addDays(TODAY,-30)&&o.dt<=addDays(TODAY,7)).sort((a,b)=>a.dt-b.dt);
-  fillList('dash-prep','c-prep',prep.map(o=>({when:relDay(o.dt),t:o.t.topic||'(untitled)',d:o.t.course,tag:prepPill(o.t)})),'All prepped. \u2728');
+  fillList('dash-prep','c-prep',prep.map(o=>({when:relDay(o.dt),t:o.t.topic||'(untitled)',d:o.t.course,tag:prepPill(o.t)})),'All prepped. ✨');
 
   // research deadlines: everything still un-ticked up to 15 days out — past ones stay put
   const dead=DB.research.filter(r=>r.target&&!r.done).map(r=>({r,dt:parseYMD(r.target)}))
@@ -1052,7 +1069,7 @@ function renderMonth(){
     const dayEvs=allEvs.slice(0,4);
     html+=`<div class="cal-cell ${dim?'dim':''} ${vac?'vac':''} ${wk?'wknd':''} ${off?'off':''} ${today?'today':''}" data-d="${ymd(c)}">
       <div class="dnum">${c.getDate()}</div>
-      ${dayEvs.map(e=>e.isLecture?`<div class="ev ev-lec" style="background:${LEC_COLOR}" data-lec="${e.lecId}" data-page="${e.page}" title="Lecture \u2014 click to open in Teaching"><span class="evtime">${fmtTime(e._s)}</span>${esc(e.title||'')}</div>`:`<div class="ev" style="background:${e.color||COLORS[0]}" data-ev="${e.id}" data-inst="${e._s.toISOString()}"><span class="evtime">${e.allDay||(e.recur&&e.recur!=='none')?'':fmtTime(e._s)}</span>${esc(e.title||'')}</div>`).join('')}
+      ${dayEvs.map(e=>e.isLecture?`<div class="ev ev-lec" style="background:${LEC_COLOR}" data-lec="${e.lecId}" data-page="${e.page}" title="Lecture — click to open in Teaching"><span class="evtime">${fmtTime(e._s)}</span>${esc(e.title||'')}</div>`:`<div class="ev" style="background:${e.color||COLORS[0]}" data-ev="${e.id}" data-inst="${e._s.toISOString()}"><span class="evtime">${e.allDay||(e.recur&&e.recur!=='none')?'':fmtTime(e._s)}</span>${esc(e.title||'')}</div>`).join('')}
     </div>`;
   }
   html+='</div></div>';
@@ -1093,13 +1110,13 @@ function renderYear(){
 function renderAgenda(){
   let days,title;
   if(calMode==='day'){days=[startOfDay(calRef)];title=fmtDayShort(calRef)+', '+calRef.getFullYear();}
-  else{const s=addDays(startOfDay(calRef),-calRef.getDay());days=[];for(let i=0;i<7;i++)days.push(addDays(s,i));title=fmtDayShort(days[0])+' \u2013 '+fmtDayShort(days[6]);}
+  else{const s=addDays(startOfDay(calRef),-calRef.getDay());days=[];for(let i=0;i<7;i++)days.push(addDays(s,i));title=fmtDayShort(days[0])+' – '+fmtDayShort(days[6]);}
   document.getElementById('cal-title').textContent=title;
   const evs=allEventsInRange(days[0],addDays(days[days.length-1],1));
   let html='<div class="card card-pad agenda">';
   for(const d of days){
     const de=evs.filter(e=>sameDay(e._s,d));
-    html+=`<div class="day-row"><div class="day-label">${DOW[d.getDay()]} <span class="sub">${d.getDate()} ${MON3[d.getMonth()]}${sameDay(d,TODAY)?' \u00b7 today':''}</span></div><div>`;
+    html+=`<div class="day-row"><div class="day-label">${DOW[d.getDay()]} <span class="sub">${d.getDate()} ${MON3[d.getMonth()]}${sameDay(d,TODAY)?' · today':''}</span></div><div>`;
     if(!de.length)html+='<div class="faint" style="padding:6px 0">—</div>';
     else de.forEach(e=>{const ca=e.isLecture?`data-lec="${e.lecId}" data-page="${e.page}"`:`data-ev="${e.id}"`;html+=`<div class="ev-line" ${ca} style="cursor:pointer"><div class="tm">${e.allDay?'All day':fmtTime(e._s)}</div><div class="swatch" style="background:${e.isLecture?LEC_COLOR:(e.color||COLORS[0])}"></div><div><div class="tt">${esc(e.title||'')}</div>${e.details?`<div class="dd">${esc(e.details)}</div>`:''}</div></div>`;});
     html+='</div></div>';
@@ -1233,13 +1250,13 @@ document.getElementById('sub-save').onclick=()=>{
 function renderResGantt(){
   const el=document.getElementById('res-gantt');
   const rows=DB.research.filter(r=>r.start&&r.target&&!r.done);
-  if(!rows.length){el.innerHTML='<div class="empty" style="padding:16px">Nothing on the timeline \u2014 add start &amp; target dates to an open project.</div>';return;}
+  if(!rows.length){el.innerHTML='<div class="empty" style="padding:16px">Nothing on the timeline — add start &amp; target dates to an open project.</div>';return;}
   let min=Infinity,max=-Infinity;rows.forEach(r=>{min=Math.min(min,parseYMD(r.start));max=Math.max(max,parseYMD(r.target));});
   min=new Date(min);max=new Date(max);
   const m0=new Date(min.getFullYear(),min.getMonth(),1),m1=new Date(max.getFullYear(),max.getMonth()+1,0);
   const span=m1-m0;const months=[];let mc=new Date(m0);while(mc<=m1){months.push(new Date(mc));mc.setMonth(mc.getMonth()+1);}
   const colW=100/months.length;
-  let head=`<div class="gantt-inner"><div class="gantt-row"><div class="gantt-label" style="font-weight:600;color:var(--muted)">Project</div><div class="gantt-months" style="grid-template-columns:repeat(${months.length},1fr)">${months.map(m=>`<div class="gantt-month">${MON3[m.getMonth()]} \u2019${String(m.getFullYear()).slice(2)}</div>`).join('')}</div></div>`;
+  let head=`<div class="gantt-inner"><div class="gantt-row"><div class="gantt-label" style="font-weight:600;color:var(--muted)">Project</div><div class="gantt-months" style="grid-template-columns:repeat(${months.length},1fr)">${months.map(m=>`<div class="gantt-month">${MON3[m.getMonth()]} ’${String(m.getFullYear()).slice(2)}</div>`).join('')}</div></div>`;
   let bars=rows.map(r=>{
     const s=parseYMD(r.start),t=parseYMD(r.target);
     const left=(s-m0)/span*100,width=Math.max(1.5,(t-s)/span*100);
@@ -1281,17 +1298,17 @@ const F_PURCHASE_PROC='https://iitpkd.ac.in/purchase-procedure-and-annexures';
 function procConfSteps(sub){
   const abroad=sub==='foreign';
   return [
-    {t:'Secure the invitation or paper acceptance, and note which pot will fund the trip \u2014 CPDA or a sponsored project.'},
-    {t:'Get your HoD\u2019s endorsement on the travel request.'},
-    {t:'Fill the funding-approval proforma for whichever route applies.',forms:[{label:'CPDA \u2014 permission to attend conference',url:F_CPDA_PERMISSION},{label:'Project funds \u2014 Form-A1',url:F_FORM_A1}]},
+    {t:'Secure the invitation or paper acceptance, and note which pot will fund the trip — CPDA or a sponsored project.'},
+    {t:'Get your HoD’s endorsement on the travel request.'},
+    {t:'Fill the funding-approval proforma for whichever route applies.',forms:[{label:'CPDA — permission to attend conference',url:F_CPDA_PERMISSION},{label:'Project funds — Form-A1',url:F_FORM_A1}]},
     abroad
-      ? {t:'Get the <b>Director\u2019s</b> approval \u2014 mandatory for travel abroad. Additional statutory/administrative clearances may be needed depending on the visit.',forms:[{label:'Travel Prior Approval / TA form',url:F_TRAVEL_TA}]}
-      : {t:'Get the <b>Dean (Administration)</b>\u2019s approval for domestic official travel, with your HoD\u2019s endorsement attached.',forms:[{label:'Travel Prior Approval / TA form',url:F_TRAVEL_TA}]},
+      ? {t:'Get the <b>Director’s</b> approval — mandatory for travel abroad. Additional statutory/administrative clearances may be needed depending on the visit.',forms:[{label:'Travel Prior Approval / TA form',url:F_TRAVEL_TA}]}
+      : {t:'Get the <b>Dean (Administration)</b>’s approval for domestic official travel, with your HoD’s endorsement attached.',forms:[{label:'Travel Prior Approval / TA form',url:F_TRAVEL_TA}]},
     {t:'Book tickets only through the authorised agents (BLCL / ATT / IRCTC), or email <a href="mailto:travels@iitpkd.ac.in">travels@iitpkd.ac.in</a> if the Institute is arranging it.'},
-    {t:'If funded by CPDA, request a travel advance if you need one \u2014 up to 90% of fare, 50% of DA/accommodation, 100% of registration/visa/insurance.'},
-    {t:'Attend the conference \u2014 keep boarding passes, receipts, and the conference certificate.'},
-    {t:'Submit your tour report to the Director \u2014 mandatory before CPDA settlement.'},
-    {t:'Submit the claim for reimbursement.',forms:[{label:'CPDA \u2014 TA claim form',url:F_CPDA_TA_CLAIM},{label:'Project funds \u2014 Form-A2',url:F_FORM_A2}]}
+    {t:'If funded by CPDA, request a travel advance if you need one — up to 90% of fare, 50% of DA/accommodation, 100% of registration/visa/insurance.'},
+    {t:'Attend the conference — keep boarding passes, receipts, and the conference certificate.'},
+    {t:'Submit your tour report to the Director — mandatory before CPDA settlement.'},
+    {t:'Submit the claim for reimbursement.',forms:[{label:'CPDA — TA claim form',url:F_CPDA_TA_CLAIM},{label:'Project funds — Form-A2',url:F_FORM_A2}]}
   ];
 }
 function procLeaveSteps(sub){
@@ -1299,32 +1316,32 @@ function procLeaveSteps(sub){
   const steps=[
     {t:'Decide which leave type applies (CL / RH / SCL / EL / HPL / Commuted / EOL / LND / Maternity / Paternity / On-Duty / Project SCL / CCL) and check your balance with your HoD or the Administration Section.'},
     {t:'Download and fill the correct application form.',forms:[{label:'CL / RH / SCL / On-Duty form',url:F_LEAVE_SHORT},{label:'EL / HPL / EOL / Commuted / Vacation / Maternity / Paternity form',url:F_LEAVE_LONG}]},
-    {t:'Get your HoD\u2019s recommendation on the form.'},
-    {t:'Submit the form to the Administration Section (Faculty Leave Matters) \u2014 by email or via Fedena.'}
+    {t:'Get your HoD’s recommendation on the form.'},
+    {t:'Submit the form to the Administration Section (Faculty Leave Matters) — by email or via Fedena.'}
   ];
   if(abroad){
-    steps.push({t:'Submit the \u201CUndertaking for Private Foreign Visit\u201D for the Director\u2019s approval \u2014 mandatory before booking any travel abroad.',forms:[{label:'Undertaking for Private Foreign Visit',url:F_NOC_FOREIGN}]});
+    steps.push({t:'Submit the “Undertaking for Private Foreign Visit” for the Director’s approval — mandatory before booking any travel abroad.',forms:[{label:'Undertaking for Private Foreign Visit',url:F_NOC_FOREIGN}]});
     steps.push({t:'Wait for both the leave sanction and the NOC approval before you depart.'});
   }else{
     steps.push({t:'Wait for the leave to be sanctioned by the competent authority before you leave headquarters.'});
   }
-  steps.push({t:'Resume duty on return; attach a medical certificate if it was medical leave and you haven\u2019t already submitted one.'});
+  steps.push({t:'Resume duty on return; attach a medical certificate if it was medical leave and you haven’t already submitted one.'});
   return steps;
 }
 function procVisitorSteps(sub){
   if(sub==='foreign')return [
     {t:'Identify the visitor and confirm their name, affiliation, purpose, and tentative dates.'},
-    {t:'Email the IAR Office \u2014 <a href="mailto:iar@iitpkd.ac.in,ir_office@iitpkd.ac.in">iar@iitpkd.ac.in / ir_office@iitpkd.ac.in</a> \u2014 with the visitor\u2019s name, affiliation, a copy of their passport, purpose, and duration, <b>before</b> making any travel arrangements.',forms:[{label:'IAR Office',url:F_IAR_SITE}]},
-    {t:'Make sure the visitor applies for the correct visa category \u2014 a tourist visa does not cover academic, research, or teaching activity.',forms:[{label:'Visa guidelines',url:F_VISA_GUIDE}]},
-    {t:'Book Guest House accommodation if needed \u2014 email <a href="mailto:ghm@iitpkd.ac.in">ghm@iitpkd.ac.in</a>, cc <a href="mailto:fc_gh@iitpkd.ac.in">fc_gh@iitpkd.ac.in</a>, with the expected arrival time.'},
-    {t:'Inform Security in advance so a Visitor\u2019s Pass can be issued on arrival.'},
-    {t:'If the Institute is arranging or funding the visitor\u2019s travel, coordinate with <a href="mailto:travels@iitpkd.ac.in">travels@iitpkd.ac.in</a>.'},
-    {t:'Host the visit \u2014 the visitor completes Guest House check-in/out formalities if staying on campus.'}
+    {t:'Email the IAR Office — <a href="mailto:iar@iitpkd.ac.in,ir_office@iitpkd.ac.in">iar@iitpkd.ac.in / ir_office@iitpkd.ac.in</a> — with the visitor’s name, affiliation, a copy of their passport, purpose, and duration, <b>before</b> making any travel arrangements.',forms:[{label:'IAR Office',url:F_IAR_SITE}]},
+    {t:'Make sure the visitor applies for the correct visa category — a tourist visa does not cover academic, research, or teaching activity.',forms:[{label:'Visa guidelines',url:F_VISA_GUIDE}]},
+    {t:'Book Guest House accommodation if needed — email <a href="mailto:ghm@iitpkd.ac.in">ghm@iitpkd.ac.in</a>, cc <a href="mailto:fc_gh@iitpkd.ac.in">fc_gh@iitpkd.ac.in</a>, with the expected arrival time.'},
+    {t:'Inform Security in advance so a Visitor’s Pass can be issued on arrival.'},
+    {t:'If the Institute is arranging or funding the visitor’s travel, coordinate with <a href="mailto:travels@iitpkd.ac.in">travels@iitpkd.ac.in</a>.'},
+    {t:'Host the visit — the visitor completes Guest House check-in/out formalities if staying on campus.'}
   ];
   return [
     {t:'Identify the visitor and confirm purpose and dates.'},
-    {t:'Book Guest House accommodation if needed \u2014 email <a href="mailto:ghm@iitpkd.ac.in">ghm@iitpkd.ac.in</a>, cc <a href="mailto:fc_gh@iitpkd.ac.in">fc_gh@iitpkd.ac.in</a>.'},
-    {t:'Inform Security in advance for a visitor\u2019s pass.'},
+    {t:'Book Guest House accommodation if needed — email <a href="mailto:ghm@iitpkd.ac.in">ghm@iitpkd.ac.in</a>, cc <a href="mailto:fc_gh@iitpkd.ac.in">fc_gh@iitpkd.ac.in</a>.'},
+    {t:'Inform Security in advance for a visitor’s pass.'},
     {t:'If the Institute is funding the travel, coordinate with <a href="mailto:travels@iitpkd.ac.in">travels@iitpkd.ac.in</a>.'},
     {t:'Host the visit.'}
   ];
@@ -1332,12 +1349,12 @@ function procVisitorSteps(sub){
 function procArrangeSteps(sub){
   const steps=[];
   steps.push(sub==='external'
-    ? {t:'Decide the scope and funding, and register the event with the Centre for Continuing Education (CCE) \u2014 <a href="mailto:cce@iitpkd.ac.in">cce@iitpkd.ac.in</a> \u2014 since it involves external funds or participants.'}
-    : {t:'Decide the scope and funding \u2014 a purely internal, department-funded event doesn\u2019t need CCE registration.'});
-  steps.push({t:'Book rooms via the MRBS portal, or for larger events coordinate venue/setup with EWD \u2014 <a href="mailto:ewd@iitpkd.ac.in">ewd@iitpkd.ac.in</a>.',forms:[{label:'MRBS booking portal',url:F_MRBS}]});
-  steps.push({t:'Book Guest House rooms for outstation speakers \u2014 email <a href="mailto:ghm@iitpkd.ac.in">ghm@iitpkd.ac.in</a>, cc <a href="mailto:fc_gh@iitpkd.ac.in">fc_gh@iitpkd.ac.in</a>.'});
+    ? {t:'Decide the scope and funding, and register the event with the Centre for Continuing Education (CCE) — <a href="mailto:cce@iitpkd.ac.in">cce@iitpkd.ac.in</a> — since it involves external funds or participants.'}
+    : {t:'Decide the scope and funding — a purely internal, department-funded event doesn’t need CCE registration.'});
+  steps.push({t:'Book rooms via the MRBS portal, or for larger events coordinate venue/setup with EWD — <a href="mailto:ewd@iitpkd.ac.in">ewd@iitpkd.ac.in</a>.',forms:[{label:'MRBS booking portal',url:F_MRBS}]});
+  steps.push({t:'Book Guest House rooms for outstation speakers — email <a href="mailto:ghm@iitpkd.ac.in">ghm@iitpkd.ac.in</a>, cc <a href="mailto:fc_gh@iitpkd.ac.in">fc_gh@iitpkd.ac.in</a>.'});
   steps.push({t:'If any speaker is a foreign national, also work through the Invite Visitor (Foreign) steps for them.'});
-  steps.push({t:'Arrange publicity with the Media &amp; Website Section \u2014 <a href="mailto:media@iitpkd.ac.in">media@iitpkd.ac.in</a>.'});
+  steps.push({t:'Arrange publicity with the Media &amp; Website Section — <a href="mailto:media@iitpkd.ac.in">media@iitpkd.ac.in</a>.'});
   steps.push({t:'Handle procurement (banners, catering, materials) via GeM / Stores &amp; Purchase, or through IC&amp;SR if grant-funded.',forms:[{label:'Purchase procedure &amp; annexures',url:F_PURCHASE_PROC}]});
   steps.push({t:'Notify Security ahead of expected footfall and vehicles.'});
   steps.push({t:'After the event, settle bills through Finance &amp; Accounts / IC&amp;SR, and file a report if it was grant-funded.'});
@@ -1346,8 +1363,8 @@ function procArrangeSteps(sub){
 const PROC_NOTE={
   conf:'From the CPDA, travel-approval, and IC&amp;SR sections of the handbook.',
   leave:'From the Leave Rules and travel-approval sections of the handbook.',
-  visitor:'Steps 1\u20133 are the handbook\u2019s own numbered foreign-national procedure; the rest are drawn from the Guest House &amp; Security sections.',
-  arrange:'The handbook has no single arrange-a-conference procedure \u2014 assembled from the CCE, MRBS, EWD, Guest House, Media &amp; IC&amp;SR sections.'
+  visitor:'Steps 1–3 are the handbook’s own numbered foreign-national procedure; the rest are drawn from the Guest House &amp; Security sections.',
+  arrange:'The handbook has no single arrange-a-conference procedure — assembled from the CCE, MRBS, EWD, Guest House, Media &amp; IC&amp;SR sections.'
 };
 const PROC_FLOWS=[
   {id:'conf',label:'Conference / Visit',subs:[{id:'domestic',label:'Domestic'},{id:'foreign',label:'Foreign'}],steps:procConfSteps},
@@ -1374,11 +1391,11 @@ function renderProcGuide(){
     <div class="proc-steps">${steps.map((s,i)=>{
       const d=procIsDone(flow.id,sub,i);
       return `<div class="proc-step ${d?'done':''}">
-        <label class="proc-tick"><input type="checkbox" data-step-i="${i}" ${d?'checked':''}><span class="tick-box">${d?'\u2713':''}</span></label>
+        <label class="proc-tick"><input type="checkbox" data-step-i="${i}" ${d?'checked':''}><span class="tick-box">${d?'✓':''}</span></label>
         <div class="proc-body">
           <div class="proc-num">Step ${i+1}</div>
           <div class="proc-text">${s.t}</div>
-          ${s.forms&&s.forms.length?`<div class="proc-forms">${s.forms.map(f=>`<a class="btn btn-sm proc-form-btn" href="${f.url}" target="_blank" rel="noopener">\u2913 ${esc(f.label)}</a>`).join('')}</div>`:''}
+          ${s.forms&&s.forms.length?`<div class="proc-forms">${s.forms.map(f=>`<a class="btn btn-sm proc-form-btn" href="${f.url}" target="_blank" rel="noopener">⤓ ${esc(f.label)}</a>`).join('')}</div>`:''}
         </div>
       </div>`;
     }).join('')}</div>`;
@@ -1453,22 +1470,22 @@ function axAgeDays(y){if(!y)return 0;return Math.round((parseYMD(axCurrentListin
    arXiv sends raw TeX. Rather than pull in MathJax, the common constructs are
    mapped to Unicode locally: no CDN, no extra request, app stays single-file.
    A title that is a genuine equation will read approximately, not perfectly. */
-const TEX_CAL={A:'\u{1D49C}',B:'\u212C',C:'\u{1D49E}',D:'\u{1D49F}',E:'\u2130',F:'\u2131',G:'\u{1D4A2}',H:'\u210B',I:'\u2110',J:'\u{1D4A5}',K:'\u{1D4A6}',L:'\u2112',M:'\u2133',N:'\u{1D4A9}',O:'\u{1D4AA}',P:'\u{1D4AB}',Q:'\u{1D4AC}',R:'\u211B',S:'\u{1D4AE}',T:'\u{1D4AF}',U:'\u{1D4B0}',V:'\u{1D4B1}',W:'\u{1D4B2}',X:'\u{1D4B3}',Y:'\u{1D4B4}',Z:'\u{1D4B5}'};
-const TEX_BB={A:'\u{1D538}',B:'\u{1D539}',C:'\u2102',D:'\u{1D53B}',E:'\u{1D53C}',F:'\u{1D53D}',G:'\u{1D53E}',H:'\u210D',I:'\u{1D540}',J:'\u{1D541}',K:'\u{1D542}',L:'\u{1D543}',M:'\u{1D544}',N:'\u2115',O:'\u{1D546}',P:'\u2119',Q:'\u211A',R:'\u211D',S:'\u{1D54A}',T:'\u{1D54B}',U:'\u{1D54C}',V:'\u{1D54D}',W:'\u{1D54E}',X:'\u{1D54F}',Y:'\u{1D550}',Z:'\u2124'};
-const TEX_SYM={alpha:'\u03B1',beta:'\u03B2',gamma:'\u03B3',delta:'\u03B4',epsilon:'\u03B5',varepsilon:'\u03B5',zeta:'\u03B6',eta:'\u03B7',theta:'\u03B8',vartheta:'\u03D1',iota:'\u03B9',kappa:'\u03BA',lambda:'\u03BB',mu:'\u03BC',nu:'\u03BD',xi:'\u03BE',pi:'\u03C0',rho:'\u03C1',sigma:'\u03C3',tau:'\u03C4',upsilon:'\u03C5',phi:'\u03C6',varphi:'\u03C6',chi:'\u03C7',psi:'\u03C8',omega:'\u03C9',
-Gamma:'\u0393',Delta:'\u0394',Theta:'\u0398',Lambda:'\u039B',Xi:'\u039E',Pi:'\u03A0',Sigma:'\u03A3',Upsilon:'\u03A5',Phi:'\u03A6',Psi:'\u03A8',Omega:'\u03A9',
-to:'\u2192',rightarrow:'\u2192',longrightarrow:'\u27F6',leftarrow:'\u2190',leftrightarrow:'\u2194',Rightarrow:'\u21D2',mapsto:'\u21A6',
-times:'\u00D7',cdot:'\u22C5',cdots:'\u22EF',ldots:'\u2026',dots:'\u2026',pm:'\u00B1',mp:'\u2213',ast:'\u2217',star:'\u22C6',circ:'\u2218',
-approx:'\u2248',sim:'\u223C',simeq:'\u2243',equiv:'\u2261',cong:'\u2245',propto:'\u221D',neq:'\u2260',ne:'\u2260',leq:'\u2264',le:'\u2264',geq:'\u2265',ge:'\u2265',ll:'\u226A',gg:'\u226B',
-infty:'\u221E',partial:'\u2202',nabla:'\u2207',hbar:'\u210F',ell:'\u2113',prime:'\u2032',dagger:'\u2020',
-oplus:'\u2295',otimes:'\u2297',odot:'\u2299',wedge:'\u2227',vee:'\u2228',cup:'\u222A',cap:'\u2229',setminus:'\u2216',
-in:'\u2208',notin:'\u2209',subset:'\u2282',subseteq:'\u2286',supset:'\u2283',forall:'\u2200',exists:'\u2203',
-langle:'\u27E8',rangle:'\u27E9',lvert:'|',rvert:'|',perp:'\u22A5',parallel:'\u2225',
-int:'\u222B',oint:'\u222E',sum:'\u2211',prod:'\u220F',sqrt:'\u221A',deg:'\u00B0',
+const TEX_CAL={A:'\u{1D49C}',B:'ℬ',C:'\u{1D49E}',D:'\u{1D49F}',E:'ℰ',F:'ℱ',G:'\u{1D4A2}',H:'ℋ',I:'ℐ',J:'\u{1D4A5}',K:'\u{1D4A6}',L:'ℒ',M:'ℳ',N:'\u{1D4A9}',O:'\u{1D4AA}',P:'\u{1D4AB}',Q:'\u{1D4AC}',R:'ℛ',S:'\u{1D4AE}',T:'\u{1D4AF}',U:'\u{1D4B0}',V:'\u{1D4B1}',W:'\u{1D4B2}',X:'\u{1D4B3}',Y:'\u{1D4B4}',Z:'\u{1D4B5}'};
+const TEX_BB={A:'\u{1D538}',B:'\u{1D539}',C:'ℂ',D:'\u{1D53B}',E:'\u{1D53C}',F:'\u{1D53D}',G:'\u{1D53E}',H:'ℍ',I:'\u{1D540}',J:'\u{1D541}',K:'\u{1D542}',L:'\u{1D543}',M:'\u{1D544}',N:'ℕ',O:'\u{1D546}',P:'ℙ',Q:'ℚ',R:'ℝ',S:'\u{1D54A}',T:'\u{1D54B}',U:'\u{1D54C}',V:'\u{1D54D}',W:'\u{1D54E}',X:'\u{1D54F}',Y:'\u{1D550}',Z:'ℤ'};
+const TEX_SYM={alpha:'α',beta:'β',gamma:'γ',delta:'δ',epsilon:'ε',varepsilon:'ε',zeta:'ζ',eta:'η',theta:'θ',vartheta:'ϑ',iota:'ι',kappa:'κ',lambda:'λ',mu:'μ',nu:'ν',xi:'ξ',pi:'π',rho:'ρ',sigma:'σ',tau:'τ',upsilon:'υ',phi:'φ',varphi:'φ',chi:'χ',psi:'ψ',omega:'ω',
+Gamma:'Γ',Delta:'Δ',Theta:'Θ',Lambda:'Λ',Xi:'Ξ',Pi:'Π',Sigma:'Σ',Upsilon:'Υ',Phi:'Φ',Psi:'Ψ',Omega:'Ω',
+to:'→',rightarrow:'→',longrightarrow:'⟶',leftarrow:'←',leftrightarrow:'↔',Rightarrow:'⇒',mapsto:'↦',
+times:'×',cdot:'⋅',cdots:'⋯',ldots:'…',dots:'…',pm:'±',mp:'∓',ast:'∗',star:'⋆',circ:'∘',
+approx:'≈',sim:'∼',simeq:'≃',equiv:'≡',cong:'≅',propto:'∝',neq:'≠',ne:'≠',leq:'≤',le:'≤',geq:'≥',ge:'≥',ll:'≪',gg:'≫',
+infty:'∞',partial:'∂',nabla:'∇',hbar:'ℏ',ell:'ℓ',prime:'′',dagger:'†',
+oplus:'⊕',otimes:'⊗',odot:'⊙',wedge:'∧',vee:'∨',cup:'∪',cap:'∩',setminus:'∖',
+in:'∈',notin:'∉',subset:'⊂',subseteq:'⊆',supset:'⊃',forall:'∀',exists:'∃',
+langle:'⟨',rangle:'⟩',lvert:'|',rvert:'|',perp:'⊥',parallel:'∥',
+int:'∫',oint:'∮',sum:'∑',prod:'∏',sqrt:'√',deg:'°',
 bar:'',hat:'',tilde:'',vec:'',dot:'',
 mathcal:'',mathbb:'',mathrm:'',mathbf:'',mathit:'',mathsf:'',text:'',textrm:'',rm:'',it:'',bf:'',displaystyle:'',nonumber:'',quad:' ',qquad:'  '};
-const SUP={'0':'\u2070','1':'\u00B9','2':'\u00B2','3':'\u00B3','4':'\u2074','5':'\u2075','6':'\u2076','7':'\u2077','8':'\u2078','9':'\u2079','+':'\u207A','-':'\u207B','=':'\u207C','(':'\u207D',')':'\u207E',n:'\u207F',i:'\u2071',a:'\u1D43',b:'\u1D47',c:'\u1D9C',d:'\u1D48',e:'\u1D49',f:'\u1DA0',g:'\u1D4D',h:'\u02B0',j:'\u02B2',k:'\u1D4F',l:'\u02E1',m:'\u1D50',o:'\u1D52',p:'\u1D56',r:'\u02B3',s:'\u02E2',t:'\u1D57',u:'\u1D58',v:'\u1D5B',w:'\u02B7',x:'\u02E3',y:'\u02B8',z:'\u1DBB',' ':' '};
-const SUB={'0':'\u2080','1':'\u2081','2':'\u2082','3':'\u2083','4':'\u2084','5':'\u2085','6':'\u2086','7':'\u2087','8':'\u2088','9':'\u2089','+':'\u208A','-':'\u208B','=':'\u208C','(':'\u208D',')':'\u208E',a:'\u2090',e:'\u2091',h:'\u2095',i:'\u1D62',j:'\u2C7C',k:'\u2096',l:'\u2097',m:'\u2098',n:'\u2099',o:'\u2092',p:'\u209A',r:'\u1D63',s:'\u209B',t:'\u209C',u:'\u1D64',v:'\u1D65',x:'\u2093',' ':' '};
+const SUP={'0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹','+':'⁺','-':'⁻','=':'⁼','(':'⁽',')':'⁾',n:'ⁿ',i:'ⁱ',a:'ᵃ',b:'ᵇ',c:'ᶜ',d:'ᵈ',e:'ᵉ',f:'ᶠ',g:'ᵍ',h:'ʰ',j:'ʲ',k:'ᵏ',l:'ˡ',m:'ᵐ',o:'ᵒ',p:'ᵖ',r:'ʳ',s:'ˢ',t:'ᵗ',u:'ᵘ',v:'ᵛ',w:'ʷ',x:'ˣ',y:'ʸ',z:'ᶻ',' ':' '};
+const SUB={'0':'₀','1':'₁','2':'₂','3':'₃','4':'₄','5':'₅','6':'₆','7':'₇','8':'₈','9':'₉','+':'₊','-':'₋','=':'₌','(':'₍',')':'₎',a:'ₐ',e:'ₑ',h:'ₕ',i:'ᵢ',j:'ⱼ',k:'ₖ',l:'ₗ',m:'ₘ',n:'ₙ',o:'ₒ',p:'ₚ',r:'ᵣ',s:'ₛ',t:'ₜ',u:'ᵤ',v:'ᵥ',x:'ₓ',' ':' '};
 
 /* a run of characters becomes a real super/subscript only if every character
    has a Unicode form — otherwise it is left readable as ^(...) */
@@ -1487,10 +1504,10 @@ function axTex(s){
   t=t.replace(/\\(?:mathrm|mathbf|mathit|mathsf|text|textrm|textbf|operatorname)\s*\{([^{}]*)\}/g,'$1');
   t=t.replace(/\\(?:bar|hat|tilde|vec|dot|overline|widetilde|widehat)\s*\{([^{}]*)\}/g,'$1');
   t=t.replace(/\\(?:frac|tfrac|dfrac)\s*\{([^{}]*)\}\s*\{([^{}]*)\}/g,(m,a,b)=>{
-    const bare=x=>/^[\w.\u0370-\u03FF]+$/.test(x);          /* 1/16, not (a+b)/(c) */
+    const bare=x=>/^[\w.Ͱ-Ͽ]+$/.test(x);          /* 1/16, not (a+b)/(c) */
     return (bare(a)&&bare(b))?a+'/'+b:'('+a+')/('+b+')';
   });
-  t=t.replace(/\\sqrt\s*\{([^{}]*)\}/g,'\u221A($1)');
+  t=t.replace(/\\sqrt\s*\{([^{}]*)\}/g,'√($1)');
   t=t.replace(/\\([A-Za-z]+)/g,(m,w)=>TEX_SYM[w]!==undefined?TEX_SYM[w]:w);
   t=t.replace(/\^\{([^{}]*)\}/g,(m,b)=>axScript(b,SUP,'^'));
   t=t.replace(/\^(\\?\S)/g,(m,b)=>axScript(b,SUP,'^'));
@@ -1525,7 +1542,7 @@ function axSay(s){
    The browser's own speech engine — nothing is loaded from anywhere. */
 let axItems=[];                 /* whatever is on screen right now */
 let axSpeaking=false;
-function axSpeakBtn(on){const b=document.getElementById('arxiv-speak');if(b)b.textContent=on?'\u25A0 Stop':'\u25B6 Play';}
+function axSpeakBtn(on){const b=document.getElementById('arxiv-speak');if(b)b.textContent=on?'■ Stop':'▶ Play';}
 function axStopSpeech(){try{if(window.speechSynthesis)window.speechSynthesis.cancel();}catch(e){}axSpeaking=false;axSpeakBtn(false);}
 /* browsers cut off a single long utterance, so the script is queued in
    sentence-sized pieces instead of one block */
@@ -1572,7 +1589,7 @@ function axPaint(items,headHTML){
   const rows=items.map(it=>{
     const inReading=DB.reading.some(x=>x.key===it.key);
     const title=axTex(it.title),authors=axTex(it.authors);
-    let abs=axTex(it.abs);if(abs.length>340)abs=abs.slice(0,340)+'\u2026';
+    let abs=axTex(it.abs);if(abs.length>340)abs=abs.slice(0,340)+'…';
     return `<div class="arxiv-item"><div class="ax-row"><input type="checkbox" class="check ax-check" ${inReading?'checked':''} title="Add to Reading list" data-key="${esc(it.key)}" data-title="${esc(title)}" data-link="${esc(it.link)}" data-authors="${esc(authors)}" data-axid="${esc(it.id)}"><div class="ax-main"><a class="ax-title" href="${esc(it.link)}" target="_blank" rel="noopener">${esc(title)}</a>${it.id?`<span class="ax-id">arXiv:${esc(it.id)}</span>`:''}<div class="ax-auth">${esc(authors)}</div><div class="ax-abs">${esc(abs)}</div></div></div></div>`;
   }).join('');
   el.innerHTML=headHTML+rows;
@@ -1615,7 +1632,7 @@ async function loadArxiv(force){
   if(!force&&cacheYMD&&cacheYMD===axCurrentListing()){
     axPaint(cache.items,axHead(cache.items.length,cacheYMD,''));arxivLoaded=true;return;
   }
-  el.innerHTML='<div class="empty" style="padding:16px">Loading the current hep-th listing\u2026</div>';
+  el.innerHTML='<div class="empty" style="padding:16px">Loading the current hep-th listing…</div>';
   /* the timestamp defeats the Pages CDN, which would otherwise keep serving the
      copy it cached before the workflow last committed */
   let data=null,failed='';
@@ -1652,7 +1669,7 @@ function teachWeek(){
   const s=DB.settings;const el=document.getElementById('sem-now');
   if(s.semesterStart){const wk=Math.floor((TODAY-parseYMD(s.semesterStart))/(7*864e5))+1;el.textContent='Week '+Math.max(wk,0)+' of '+s.totalWeeks;}else el.textContent='—';
 }
-function lecDateLabel(t){if(!t.date)return'set';const d=lecDate(t);let s=d.getDate()+' '+MON3[d.getMonth()];if(t.time)s+=' \u00b7 '+fmtTime(d);return s;}
+function lecDateLabel(t){if(!t.date)return'set';const d=lecDate(t);let s=d.getDate()+' '+MON3[d.getMonth()];if(t.time)s+=' · '+fmtTime(d);return s;}
 function renderTeaching(){
   document.getElementById('sem-start').value=DB.settings.semesterStart||'';
   document.getElementById('sem-total').value=DB.settings.totalWeeks||16;
@@ -1694,7 +1711,7 @@ document.getElementById('teach-body').addEventListener('click',e=>{
     inp.addEventListener('change',commit);inp.addEventListener('blur',commit);
   }
 });
-document.getElementById('teach-add').onclick=()=>{DB.teaching.push({id:uid(),course:'',lec:'',date:ymd(TODAY),time:'09:00',page:(DB.teachPage||0),topic:'',prepDone:false,comments:''});save();renderTeaching();toast('Lecture added \u00b7 also on the Calendar');};
+document.getElementById('teach-add').onclick=()=>{DB.teaching.push({id:uid(),course:'',lec:'',date:ymd(TODAY),time:'09:00',page:(DB.teachPage||0),topic:'',prepDone:false,comments:''});save();renderTeaching();toast('Lecture added · also on the Calendar');};
 
 /* ======================= NOTES ======================= */
 let curNote=null,noteEditing=false;
@@ -1710,7 +1727,7 @@ function renderNotes(){
 
   if(!noteEditing){   /* ---- read mode: rendered note only ---- */
     wrap.innerHTML=`<div class="note-head"><h2>${esc(n.title||'Untitled')}</h2>
-      <div class="btn-row"><button class="btn btn-sm" id="note-editbtn">\u270e Edit</button><button class="del-x" id="note-del">\u00d7</button></div></div>
+      <div class="btn-row"><button class="btn btn-sm" id="note-editbtn">✎ Edit</button><button class="del-x" id="note-del">×</button></div></div>
       <div class="preview read" id="note-preview"></div>`;
     document.getElementById('note-editbtn').onclick=()=>{noteEditing=true;renderNotes();};
     document.getElementById('note-del').onclick=()=>{if(!confirm('Delete this note?'))return;DB.notes=DB.notes.filter(x=>x.id!==n.id);curNote=null;save();renderNotes();toast('Note deleted');};
@@ -1720,7 +1737,7 @@ function renderNotes(){
 
   /* ---- edit mode ---- */
   wrap.innerHTML=`<div class="note-head"><input type="text" id="note-title" value="${esc(n.title)}" placeholder="Title">
-    <button class="btn btn-primary btn-sm" id="note-done">\u2713 Done</button></div>
+    <button class="btn btn-primary btn-sm" id="note-done">✓ Done</button></div>
     <textarea id="note-body" placeholder="Write in Markdown. Inline math: $e^{i\\pi}+1=0$">${esc(n.body)}</textarea>
     <div class="preview" id="note-preview"></div>`;
   const t=document.getElementById('note-title'),b=document.getElementById('note-body');
@@ -1778,7 +1795,7 @@ async function loadCC(force){
   /* the listing changes once every two months, so a cache is almost always the
      right answer; only go to the network on the first load of a session or on Refresh */
   if(!force&&hasCache&&ccLoaded){ccPaint(cache,'');return;}
-  if(!hasCache)el.innerHTML='<div class="card"><div class="empty" style="padding:16px">Loading the current issue\u2026</div></div>';
+  if(!hasCache)el.innerHTML='<div class="card"><div class="empty" style="padding:16px">Loading the current issue…</div></div>';
   else ccPaint(cache,'');
   let data=null,failed='';
   try{
@@ -1798,6 +1815,30 @@ async function loadCC(force){
 const ccBtn=document.getElementById('cc-refresh');if(ccBtn)ccBtn.onclick=()=>loadCC(true);
 
 /* ======================= READING ======================= */
+/* ---- chronological order, by the arXiv identifier itself ----
+   A new-style id is YYMM.NNNNN (1909.00919 = September 2019); an old-style one
+   carries the same YYMM right after the archive prefix (hep-th/9711200 =
+   November 1997). arXiv opened in 1991, so a two-digit year of 91 or more is
+   1900s and anything else is 2000s. The sequence number breaks ties inside a
+   month. Anything with no usable id falls back to the order it was added. */
+function axChronoKey(id){
+  const s=String(id||'').trim().replace(/v\d+$/i,'');
+  let m=s.match(/(\d{2})(\d{2})\.(\d{4,5})$/);        /* new style: 1909.00919 */
+  if(!m)m=s.match(/(\d{2})(\d{2})(\d{3})$/);          /* old style: hep-th/9711200 */
+  if(!m)return null;
+  const yy=+m[1],mm=+m[2],seq=+m[3];
+  if(mm<1||mm>12)return null;
+  return (yy>=91?1900+yy:2000+yy)*1e8+mm*1e6+seq;
+}
+function readingSorted(){
+  return [...DB.reading].sort((a,b)=>{
+    const ka=axChronoKey(a.arxivId),kb=axChronoKey(b.arxivId);
+    if(ka!==null&&kb!==null&&ka!==kb)return kb-ka;     /* newest arXiv month first */
+    if(ka!==null&&kb===null)return -1;                 /* dated papers above undated ones */
+    if(ka===null&&kb!==null)return 1;
+    return (b.added||0)-(a.added||0);
+  });
+}
 function renderReading(){
   /* the section holds two independent panes; only the visible one is built */
   const pg=DB.readingPage||0;
@@ -1806,12 +1847,12 @@ function renderReading(){
   document.getElementById('reading-popsci').style.display=pg?'':'none';
   if(pg){loadCC(false);return;}
   const body=document.getElementById('reading-body');
-  const rows=[...DB.reading].sort((a,b)=>(b.added||0)-(a.added||0));
+  const rows=readingSorted();
   body.innerHTML=rows.map(r=>`<tr data-id="${r.id}">
     <td class="paper-cell"><a class="ax-title" style="font-size:14px" href="${esc(r.link||'#')}" target="_blank" rel="noopener">${esc(axTex(r.title||'(untitled)'))}</a>${r.authors?`<div class="ax-auth">${esc(axTex(r.authors))}</div>`:''}${r.arxivId?`<div class="ax-id" style="display:block;margin-top:2px"><a href="${esc(r.link||'#')}" target="_blank" rel="noopener" style="color:var(--faint)">arXiv:${esc(r.arxivId)}</a></div>`:''}</td>
-    <td class="cmt-cell"><textarea class="cmt" data-f="comment" rows="1" placeholder="notes\u2026">${esc(r.comment)}</textarea></td>
+    <td class="cmt-cell"><textarea class="cmt" data-f="comment" rows="1" placeholder="notes…">${esc(r.comment)}</textarea></td>
     <td><button class="del-x" data-del="${r.id}">×</button></td>
-  </tr>`).join('')||`<tr><td colspan="3" class="empty">No papers yet — tick a paper in the arXiv feed on the Research page.</td></tr>`;
+  </tr>`).join('')||`<tr><td colspan="3" class="empty">No papers yet — tick one in the arXiv feed on the Research page, or add an older one with “+ arXiv number”.</td></tr>`;
   fitComments();
 }
 /* the comment box takes up the whole height the title/authors/arXiv lines create,
@@ -1842,6 +1883,87 @@ document.getElementById('reading-body').addEventListener('input',e=>{
 document.getElementById('reading-body').addEventListener('click',e=>{
   const d=e.target.closest('[data-del]');if(d){DB.reading=DB.reading.filter(x=>x.id!==d.dataset.del);save();renderReading();}
 });
+
+/* ---- second way in: add a paper straight from its arXiv number ----
+   arXiv's own export API serves `Access-Control-Allow-Origin: *`, so this one
+   call can be made from the browser with no proxy in the way — unlike the daily
+   listing page, which is why that one is built server-side instead. If the call
+   does fail, the paper is still filed under its number so nothing is lost. */
+const AX_API='https://export.arxiv.org/api/query';
+const axAddBg=document.getElementById('axadd-bg');
+function axNormId(s){
+  return String(s||'').trim()
+    .replace(/^arxiv:/i,'')
+    .replace(/^https?:\/\/(www\.)?arxiv\.org\/(abs|pdf)\//i,'')
+    .replace(/\.pdf$/i,'')
+    .replace(/v\d+$/i,'')
+    .replace(/\s+/g,'');
+}
+async function axLookup(ids){
+  const url=AX_API+'?id_list='+encodeURIComponent(ids.join(','))+'&max_results='+ids.length;
+  const res=await fetch(url,{cache:'no-store'});
+  if(!res.ok)throw new Error('HTTP '+res.status);
+  const doc=new DOMParser().parseFromString(await res.text(),'application/xml');
+  if(doc.getElementsByTagName('parsererror').length)throw new Error('bad response');
+  const out=[];
+  [...doc.getElementsByTagName('entry')].forEach(en=>{
+    const one=t=>{const n=en.getElementsByTagName(t)[0];return n?n.textContent:'';};
+    const rawId=one('id');
+    if(!rawId||/\/api\/errors/.test(rawId))return;      /* arXiv's "no such paper" entry */
+    const id=rawId.replace(/^https?:\/\/arxiv\.org\/abs\//,'').replace(/v\d+$/i,'');
+    const authors=[...en.getElementsByTagName('author')]
+      .map(a=>{const n=a.getElementsByTagName('name')[0];return n?n.textContent.trim():'';})
+      .filter(Boolean).join(', ');
+    out.push({id,key:id,title:axClean(one('title')),authors:axClean(authors),link:'https://arxiv.org/abs/'+id});
+  });
+  return out;
+}
+function axAddOpen(){
+  document.getElementById('axadd-id').value='';
+  document.getElementById('axadd-err').textContent='';
+  const b=document.getElementById('axadd-save');b.disabled=false;b.textContent='Add to Reading';
+  axAddBg.classList.add('show');
+  setTimeout(()=>document.getElementById('axadd-id').focus(),40);
+}
+async function axAddSubmit(){
+  const inp=document.getElementById('axadd-id');
+  const err=document.getElementById('axadd-err');
+  const btn=document.getElementById('axadd-save');
+  const want=[...new Set(inp.value.split(/[\s,;]+/).map(axNormId).filter(Boolean))];
+  if(!want.length){err.textContent='Type an arXiv number first.';return;}
+  err.textContent='';btn.disabled=true;btn.textContent='Looking up…';
+  let found=[],failed=false;
+  try{found=await axLookup(want);}catch(e){failed=true;}
+  const byId={};found.forEach(m=>{byId[m.id]=m;});
+  let added=0,dupe=0,bare=0,bad=0;
+  for(const q of want){
+    if(DB.reading.some(x=>x.key===q||x.arxivId===q)){dupe++;continue;}
+    const m=byId[q];
+    if(!m&&!failed){bad++;continue;}
+    /* no metadata (arXiv unreachable) — file it under the number itself */
+    const rec=m||{id:q,key:q,title:'arXiv:'+q,authors:'',link:'https://arxiv.org/abs/'+q};
+    DB.reading.unshift({id:uid(),key:rec.key,arxivId:rec.id,title:rec.title,link:rec.link,authors:rec.authors,comment:'',added:Date.now()});
+    added++;if(!m)bare++;
+  }
+  btn.disabled=false;btn.textContent='Add to Reading';
+  if(!added){
+    err.textContent=failed?'Could not reach arXiv — check the connection and try again.'
+      :(dupe&&!bad?'Already in the reading list.':'No paper found for that number.');
+    return;
+  }
+  save();renderReading();
+  axAddBg.classList.remove('show');
+  let msg=added+' paper'+(added===1?'':'s')+' added';
+  if(bare)msg+=' · number only, arXiv unreachable';
+  if(dupe)msg+=' · '+dupe+' already there';
+  if(bad)msg+=' · '+bad+' not found';
+  toast(msg);
+}
+document.getElementById('reading-addax').onclick=axAddOpen;
+document.getElementById('axadd-cancel').onclick=()=>axAddBg.classList.remove('show');
+axAddBg.addEventListener('click',e=>{if(e.target===axAddBg)axAddBg.classList.remove('show');});
+document.getElementById('axadd-save').onclick=axAddSubmit;
+document.getElementById('axadd-id').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();axAddSubmit();}});
 
 /* ======================= REVIEW ======================= */
 function renderRemList(elId,arr,empty){
@@ -1921,11 +2043,11 @@ async function syncPush(manual){
     const gi=document.getElementById('gh-gist');if(gi)gi.value=j.id;
     dirty=false;clearTimeout(pushT);pushFabSet('hide');
     remoteRev=j.updated_at||remoteRev;   /* we made this revision — don't gate ourselves on it */
-    ghStatus('Pushed \u2713 '+new Date().toLocaleTimeString());
-    if(manual)toast('Pushed to Gist \u2713');
+    ghStatus('Pushed ✓ '+new Date().toLocaleTimeString());
+    if(manual)toast('Pushed to Gist ✓');
     return true;
   }catch(e){
-    ghStatus('Push failed ('+e.message+')');toast('Push failed ('+e.message+') \u2014 will retry');pushFabSet('failed');
+    ghStatus('Push failed ('+e.message+')');toast('Push failed ('+e.message+') — will retry');pushFabSet('failed');
     schedulePush();                                  /* keep dirty; try again after the next idle window */
     return false;
   }
@@ -1958,8 +2080,8 @@ async function syncPull(quiet){
     /* the copy we just pulled may predate a seed — apply it now, on top of the
        fresh data, and let the normal dirty/push path carry it back to the Gist */
     applySeeds();
-    ghStatus('Pulled \u2713 '+new Date().toLocaleTimeString());
-    if(!quiet)toast('Synced from Gist \u2713');
+    ghStatus('Pulled ✓ '+new Date().toLocaleTimeString());
+    if(!quiet)toast('Synced from Gist ✓');
     render();                                        /* redraw the view we're on */
     return true;
   }catch(e){
@@ -2050,7 +2172,7 @@ function raiseGate(kind){
     gateMsg.textContent='This copy is now out of date. Pull before you carry on editing here.';
     gateSkip.style.display='block';
     gateWarn.style.display=dirty?'block':'none';
-    gateWarn.textContent='This device has edits that never reached the Gist. Pulling will discard them \u2014 if you want to keep them instead, close this and push from Sync & backup (it will ask you to confirm).';
+    gateWarn.textContent='This device has edits that never reached the Gist. Pulling will discard them — if you want to keep them instead, close this and push from Sync & backup (it will ask you to confirm).';
   }else{
     gateHead.textContent='Sync before you start';
     gateMsg.textContent='Pull the latest copy from the Gist. Editing is safe only once this succeeds.';
@@ -2060,10 +2182,10 @@ function raiseGate(kind){
   gateBg.classList.add('show');
 }
 gateBtn.onclick=async()=>{
-  gateBtn.disabled=true;gateBtn.textContent='PULLING\u2026';gateErr.textContent='';
+  gateBtn.disabled=true;gateBtn.textContent='PULLING…';gateErr.textContent='';
   const ok=await syncPull(true);
   gateBtn.disabled=false;gateBtn.textContent='PULL';
-  if(ok){gateBg.classList.remove('show');gateWarn.style.display='none';toast('Synced from Gist \u2713');}
+  if(ok){gateBg.classList.remove('show');gateWarn.style.display='none';toast('Synced from Gist ✓');}
   else{gateErr.textContent='Pull failed. Check the network / token, then try again.';gateSkip.style.display='block';}
 };
 document.getElementById('gate-skip').onclick=()=>{
@@ -2071,7 +2193,7 @@ document.getElementById('gate-skip').onclick=()=>{
   /* editing the local copy anyway — seed it so this session is usable; a later
      successful pull will re-seed on top of the Gist copy if it needs it */
   if(applySeeds())render();
-  toast('Working offline \u2014 auto-push is off');
+  toast('Working offline — auto-push is off');
 };
 
 /* ---------- stale-copy detection ----------
