@@ -1888,13 +1888,14 @@ document.getElementById('reading-body').addEventListener('click',e=>{
 });
 
 /* ---- second way in: add a paper straight from its arXiv number ----
-   The lookup goes to arXiv's export API, which is the only arXiv endpoint meant
-   to be called programmatically. Whether a browser is allowed to call it depends
-   on the CORS header arXiv serves, so every failure mode is reported verbatim in
-   the dialog rather than swallowed — a blocked request and a wrong number say
-   different things. If the lookup cannot run at all, the title can be typed in by
-   hand; a row is never filed under a bare number, which reads as a broken entry. */
-const AX_API='https://export.arxiv.org/api/query';
+   The lookup goes to INSPIRE, not to arXiv. INSPIRE's own site is a JavaScript
+   front end talking to this same API, so it serves `Access-Control-Allow-Origin: *`
+   and a page on another origin is allowed to read the answer — which is exactly
+   what arXiv's endpoints refuse, and why the daily listing has to be built
+   server-side. INSPIRE covers HEP, so hep-th / hep-ph / gr-qc are all there; for
+   anything outside that (a stray cond-mat or math paper) it simply has no record,
+   and the title can be typed in by hand. A row is never filed under a bare number. */
+const INSPIRE_API='https://inspirehep.net/api/arxiv/';
 const axAddBg=document.getElementById('axadd-bg');
 function axNormId(s){
   return String(s||'').trim()
@@ -1904,30 +1905,40 @@ function axNormId(s){
     .replace(/v\d+$/i,'')
     .replace(/\s+/g,'');
 }
-async function axLookup(ids){
-  const url=AX_API+'?id_list='+encodeURIComponent(ids.join(','))+'&max_results='+ids.length;
+/* INSPIRE writes a name as "Mezei, Mark"; the arXiv feed writes "Mark Mezei",
+   and the reading list should not show two different conventions side by side */
+function axName(n){
+  const p=String(n||'').split(',');
+  return p.length>1?(p[1].trim()+' '+p[0].trim()).trim():String(n||'').trim();
+}
+/* one record, or null when INSPIRE has never heard of the paper */
+async function axLookupOne(id){
   let res;
   try{
-    res=await fetch(url,{cache:'no-store'});
+    res=await fetch(INSPIRE_API+encodeURIComponent(id)+'?fields=titles,authors',{cache:'no-store',headers:{Accept:'application/json'}});
   }catch(e){
-    /* a rejected fetch is the browser refusing it, not arXiv answering: almost
-       always the missing CORS header, occasionally the network being down */
-    throw new Error('the browser blocked the call to export.arxiv.org — '+((e&&e.message)||'fetch failed')+' (open the console for the exact reason)');
+    /* a rejected fetch is the browser refusing the call, not INSPIRE answering */
+    throw new Error('the browser blocked the call to inspirehep.net — '+((e&&e.message)||'fetch failed')+' (open the console for the exact reason)');
   }
-  if(!res.ok)throw new Error('arXiv answered HTTP '+res.status);
-  const doc=new DOMParser().parseFromString(await res.text(),'application/xml');
-  if(doc.getElementsByTagName('parsererror').length)throw new Error('arXiv sent something that is not valid XML');
-  const out=[];
-  [...doc.getElementsByTagName('entry')].forEach(en=>{
-    const one=t=>{const n=en.getElementsByTagName(t)[0];return n?n.textContent:'';};
-    const rawId=one('id');
-    if(!rawId||/\/api\/errors/.test(rawId))return;      /* arXiv's "no such paper" entry */
-    const id=rawId.replace(/^https?:\/\/arxiv\.org\/abs\//,'').replace(/v\d+$/i,'');
-    const authors=[...en.getElementsByTagName('author')]
-      .map(a=>{const n=a.getElementsByTagName('name')[0];return n?n.textContent.trim():'';})
-      .filter(Boolean).join(', ');
-    out.push({id,key:id,title:axClean(one('title')),authors:axClean(authors),link:'https://arxiv.org/abs/'+id});
-  });
+  if(res.status===404)return null;
+  if(!res.ok)throw new Error('INSPIRE answered HTTP '+res.status);
+  let j;
+  try{j=await res.json();}catch(e){throw new Error('INSPIRE sent something that is not JSON');}
+  const md=(j&&j.metadata)||{};
+  const title=axClean((md.titles&&md.titles.length&&md.titles[0].title)||'');
+  if(!title)return null;
+  let names=(md.authors||[]).map(a=>axName(a&&a.full_name)).filter(Boolean);
+  const many=names.length>20;                  /* collaboration lists run to hundreds */
+  if(many)names=names.slice(0,20);
+  const authors=names.join(', ')+(many?' et al.':'');
+  return {id,key:id,title,authors,link:'https://arxiv.org/abs/'+id};
+}
+/* all the numbers at once; one blocked call fails the batch, which is what we want
+   — it means the lookup cannot run at all, not that one paper is missing */
+async function axLookup(ids){
+  const recs=await Promise.all(ids.map(axLookupOne));
+  const out={};
+  ids.forEach((id,i)=>{out[id]=recs[i];});
   return out;
 }
 function axAddFile(rec){
@@ -1967,31 +1978,33 @@ async function axAddSubmit(){
   }
 
   err.textContent='';btn.disabled=true;btn.textContent='Looking up…';
-  let found=[],failMsg='';
+  let found={},failMsg='';
   try{found=await axLookup(want);}catch(e){failMsg=(e&&e.message)||'the lookup failed';}
   btn.disabled=false;btn.textContent='Add to Reading';
 
   /* the lookup could not run — say exactly why, and offer the manual fields.
      Nothing is filed: a row holding only a number is worse than no row. */
   if(failMsg){
-    err.textContent='Could not read arXiv: '+failMsg+'. Type the title below to add it by hand instead.';
+    err.textContent='Could not read INSPIRE: '+failMsg+'. Type the title below to add it by hand instead.';
     man.style.display='';setTimeout(()=>tIn.focus(),40);
     return;
   }
 
-  const byId={};found.forEach(m=>{byId[m.id]=m;});
   let added=0,dupe=0,bad=0;
   for(const q of want){
     if(DB.reading.some(x=>x.key===q||x.arxivId===q)){dupe++;continue;}
-    /* arXiv echoes the id it knows, which may differ in case from what was typed */
-    const m=byId[q]||found.find(x=>x.id.toLowerCase()===q.toLowerCase())||(want.length===1&&found.length===1?found[0]:null);
+    const m=found[q];
     if(!m){bad++;continue;}
     axAddFile(m);added++;
   }
   if(!added){
-    err.textContent=(dupe&&!bad)
-      ? (dupe===1?'That paper is already in the reading list.':'Those papers are already in the reading list.')
-      : 'arXiv has no record of that number — check the digits.';
+    if(dupe&&!bad){
+      err.textContent=dupe===1?'That paper is already in the reading list.':'Those papers are already in the reading list.';
+    }else{
+      /* INSPIRE is HEP-only, so "not found" is as likely to mean out of scope as mistyped */
+      err.textContent='INSPIRE has no record of that number — check the digits, or type the title below to add it by hand.';
+      man.style.display='';setTimeout(()=>tIn.focus(),40);
+    }
     return;
   }
   save();renderReading();
