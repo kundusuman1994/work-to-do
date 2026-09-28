@@ -616,9 +616,8 @@ hr.soft{border:none;border-top:1px solid var(--line);margin:20px 0}
       </div>
 
       <div id="reading-papers">
-        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin:0 0 14px">
-          <p class="muted" style="margin:0">Papers you tick on the arXiv feed land here, and older ones can be added straight by their arXiv number. Sorted by arXiv date — newest first.</p>
-          <button class="btn btn-primary btn-sm" id="reading-addax" title="Add a paper by its arXiv number" style="flex-shrink:0">+ arXiv number</button>
+        <div style="display:flex;justify-content:flex-end;align-items:center;gap:12px;margin:0 0 14px">
+          <button class="btn btn-primary" id="reading-addax" title="Add a paper by its arXiv number" aria-label="Add a paper by its arXiv number" style="flex-shrink:0;width:36px;height:36px;padding:0;border-radius:50%;font-size:21px;line-height:1;display:flex;align-items:center;justify-content:center">+</button>
         </div>
         <div class="card" style="overflow-x:auto">
           <table id="reading-table">
