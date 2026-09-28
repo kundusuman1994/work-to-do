@@ -745,6 +745,10 @@ hr.soft{border:none;border-top:1px solid var(--line);margin:20px 0}
     <h3>Add a paper by arXiv number</h3>
     <div class="field"><label class="fld">arXiv number</label><input type="text" id="axadd-id" placeholder="1909.00919"></div>
     <p class="muted" style="margin:-6px 0 0;font-size:12.5px">New style (<code>1909.00919</code>) or old style (<code>hep-th/9711200</code>). A full arXiv link works too, and several numbers can be separated by commas or spaces.</p>
+    <div id="axadd-manual" style="display:none;margin-top:14px;border-top:1px solid var(--line);padding-top:12px">
+      <div class="field"><label class="fld">Title</label><input type="text" id="axadd-title" placeholder="Paper title"></div>
+      <div class="field" style="margin-bottom:0"><label class="fld">Authors <span class="faint">(optional)</span></label><input type="text" id="axadd-authors" placeholder="A. Author, B. Author"></div>
+    </div>
     <div class="gate-err" id="axadd-err"></div>
     <div class="modal-foot">
       <span></span>
@@ -1884,10 +1888,12 @@ document.getElementById('reading-body').addEventListener('click',e=>{
 });
 
 /* ---- second way in: add a paper straight from its arXiv number ----
-   arXiv's own export API serves `Access-Control-Allow-Origin: *`, so this one
-   call can be made from the browser with no proxy in the way — unlike the daily
-   listing page, which is why that one is built server-side instead. If the call
-   does fail, the paper is still filed under its number so nothing is lost. */
+   The lookup goes to arXiv's export API, which is the only arXiv endpoint meant
+   to be called programmatically. Whether a browser is allowed to call it depends
+   on the CORS header arXiv serves, so every failure mode is reported verbatim in
+   the dialog rather than swallowed — a blocked request and a wrong number say
+   different things. If the lookup cannot run at all, the title can be typed in by
+   hand; a row is never filed under a bare number, which reads as a broken entry. */
 const AX_API='https://export.arxiv.org/api/query';
 const axAddBg=document.getElementById('axadd-bg');
 function axNormId(s){
@@ -1900,10 +1906,17 @@ function axNormId(s){
 }
 async function axLookup(ids){
   const url=AX_API+'?id_list='+encodeURIComponent(ids.join(','))+'&max_results='+ids.length;
-  const res=await fetch(url,{cache:'no-store'});
-  if(!res.ok)throw new Error('HTTP '+res.status);
+  let res;
+  try{
+    res=await fetch(url,{cache:'no-store'});
+  }catch(e){
+    /* a rejected fetch is the browser refusing it, not arXiv answering: almost
+       always the missing CORS header, occasionally the network being down */
+    throw new Error('the browser blocked the call to export.arxiv.org — '+((e&&e.message)||'fetch failed')+' (open the console for the exact reason)');
+  }
+  if(!res.ok)throw new Error('arXiv answered HTTP '+res.status);
   const doc=new DOMParser().parseFromString(await res.text(),'application/xml');
-  if(doc.getElementsByTagName('parsererror').length)throw new Error('bad response');
+  if(doc.getElementsByTagName('parsererror').length)throw new Error('arXiv sent something that is not valid XML');
   const out=[];
   [...doc.getElementsByTagName('entry')].forEach(en=>{
     const one=t=>{const n=en.getElementsByTagName(t)[0];return n?n.textContent:'';};
@@ -1917,8 +1930,14 @@ async function axLookup(ids){
   });
   return out;
 }
+function axAddFile(rec){
+  DB.reading.unshift({id:uid(),key:rec.key,arxivId:rec.id,title:rec.title,link:rec.link,authors:rec.authors,comment:'',added:Date.now()});
+}
 function axAddOpen(){
   document.getElementById('axadd-id').value='';
+  document.getElementById('axadd-title').value='';
+  document.getElementById('axadd-authors').value='';
+  document.getElementById('axadd-manual').style.display='none';
   document.getElementById('axadd-err').textContent='';
   const b=document.getElementById('axadd-save');b.disabled=false;b.textContent='Add to Reading';
   axAddBg.classList.add('show');
@@ -1928,32 +1947,56 @@ async function axAddSubmit(){
   const inp=document.getElementById('axadd-id');
   const err=document.getElementById('axadd-err');
   const btn=document.getElementById('axadd-save');
+  const man=document.getElementById('axadd-manual');
+  const tIn=document.getElementById('axadd-title'),aIn=document.getElementById('axadd-authors');
   const want=[...new Set(inp.value.split(/[\s,;]+/).map(axNormId).filter(Boolean))];
   if(!want.length){err.textContent='Type an arXiv number first.';return;}
+
+  /* hand-typed path: only once the lookup has already failed and the fields are showing */
+  if(man.style.display!=='none'&&tIn.value.trim()){
+    let added=0,dupe=0;
+    for(const q of want){
+      if(DB.reading.some(x=>x.key===q||x.arxivId===q)){dupe++;continue;}
+      axAddFile({id:q,key:q,title:tIn.value.trim(),authors:aIn.value.trim(),link:'https://arxiv.org/abs/'+q});
+      added++;
+    }
+    if(!added){err.textContent='Already in the reading list.';return;}
+    save();renderReading();axAddBg.classList.remove('show');
+    toast(added+' paper'+(added===1?'':'s')+' added by hand');
+    return;
+  }
+
   err.textContent='';btn.disabled=true;btn.textContent='Looking up…';
-  let found=[],failed=false;
-  try{found=await axLookup(want);}catch(e){failed=true;}
+  let found=[],failMsg='';
+  try{found=await axLookup(want);}catch(e){failMsg=(e&&e.message)||'the lookup failed';}
+  btn.disabled=false;btn.textContent='Add to Reading';
+
+  /* the lookup could not run — say exactly why, and offer the manual fields.
+     Nothing is filed: a row holding only a number is worse than no row. */
+  if(failMsg){
+    err.textContent='Could not read arXiv: '+failMsg+'. Type the title below to add it by hand instead.';
+    man.style.display='';setTimeout(()=>tIn.focus(),40);
+    return;
+  }
+
   const byId={};found.forEach(m=>{byId[m.id]=m;});
-  let added=0,dupe=0,bare=0,bad=0;
+  let added=0,dupe=0,bad=0;
   for(const q of want){
     if(DB.reading.some(x=>x.key===q||x.arxivId===q)){dupe++;continue;}
-    const m=byId[q];
-    if(!m&&!failed){bad++;continue;}
-    /* no metadata (arXiv unreachable) — file it under the number itself */
-    const rec=m||{id:q,key:q,title:'arXiv:'+q,authors:'',link:'https://arxiv.org/abs/'+q};
-    DB.reading.unshift({id:uid(),key:rec.key,arxivId:rec.id,title:rec.title,link:rec.link,authors:rec.authors,comment:'',added:Date.now()});
-    added++;if(!m)bare++;
+    /* arXiv echoes the id it knows, which may differ in case from what was typed */
+    const m=byId[q]||found.find(x=>x.id.toLowerCase()===q.toLowerCase())||(want.length===1&&found.length===1?found[0]:null);
+    if(!m){bad++;continue;}
+    axAddFile(m);added++;
   }
-  btn.disabled=false;btn.textContent='Add to Reading';
   if(!added){
-    err.textContent=failed?'Could not reach arXiv — check the connection and try again.'
-      :(dupe&&!bad?'Already in the reading list.':'No paper found for that number.');
+    err.textContent=(dupe&&!bad)
+      ? (dupe===1?'That paper is already in the reading list.':'Those papers are already in the reading list.')
+      : 'arXiv has no record of that number — check the digits.';
     return;
   }
   save();renderReading();
   axAddBg.classList.remove('show');
   let msg=added+' paper'+(added===1?'':'s')+' added';
-  if(bare)msg+=' · number only, arXiv unreachable';
   if(dupe)msg+=' · '+dupe+' already there';
   if(bad)msg+=' · '+bad+' not found';
   toast(msg);
@@ -1963,6 +2006,7 @@ document.getElementById('axadd-cancel').onclick=()=>axAddBg.classList.remove('sh
 axAddBg.addEventListener('click',e=>{if(e.target===axAddBg)axAddBg.classList.remove('show');});
 document.getElementById('axadd-save').onclick=axAddSubmit;
 document.getElementById('axadd-id').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();axAddSubmit();}});
+document.getElementById('axadd-title').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();axAddSubmit();}});
 
 /* ======================= REVIEW ======================= */
 function renderRemList(elId,arr,empty){
