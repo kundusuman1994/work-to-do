@@ -1,152 +1,240 @@
 {
- "listing": "2026-10-05",
+ "listing": "2026-10-06",
  "source": "rss",
- "count": 18,
+ "count": 29,
  "items": [
   {
-   "id": "2610.02305",
-   "key": "2610.02305",
-   "title": "Blackened BPS: the end of the thermal BMN branch",
-   "authors": "Jorge E. Santos",
-   "abstract": "We study the thermodynamics of the BMN matrix model at large $N$ and strong coupling, using its dual black holes in eleven-dimensional supergravity. Within the consistent truncation to two-dimensional $SO(9)$ gauged supergravity, the static $SO(3)\\times SO(6)$-invariant black holes solve ordinary differential equations, which we solve to high precision. We formulate holographic renormalisation for this truncation and fix the finite counterterms using a supersymmetric solution. This gives the energy, the entropy and the response to the BMN mass independently, and we verify the first law and the Smarr relation along the branch. The thermal branch ends at a critical value of $\\mu/T$, which power-law fits place at $4\\pi$ with an estimated uncertainty below $10^{-10}$. The first-order transition inferred in earlier work, where the free energy was reconstructed from the entropy, does not survive, and an independent eleven-dimensional calculation agrees with ours over the range it covers. Instead, the free energy, the entropy and the mass response approach their values in the confined phase continuously at the end of the branch, where the solutions become singular. If this branch remains the dominant one up to its end point, the transition therefore coincides with the singularity. Near the end of the branch, the scalar fields follow a solution of the supersymmetric first-order equations, while the metric carries a nontrivial blackening factor. The horizon develops a neck whose profile is universal, with radii growing as the $2/5$ power of the distance from the pinch. Within the range we resolve, the geometry is not that of the Ricci-flat double cone which governs mergers of vacuum black holes.",
-   "link": "https://arxiv.org/abs/2610.02305"
+   "id": "2610.03725",
+   "key": "2610.03725",
+   "title": "Supplementary Notes on VOA and 2D SCFT",
+   "authors": "Taizan Watari",
+   "abstract": "Sections 2--3 of this note were prepared primarily for the author's private use, as a means of organizing the materials in (generally non-holomorphic) conformal field theory (CFT) on 2-dimensions in the language of the vertex operator algebra, and also of collecting subtle details. The choice of topics is intended to supplement introductory physics textbooks on the subject. Section 4 deals with (generally non-holomorphic) Type 0 CFTs in the language of vertex operator superalgebra (SVOA). Formulations of crossing symmetry and intertwining superoperators [resp. CFT vertex superoperators] of states in the Ramond (SVOA-twisted) sector [resp. the Ramond--Ramond sector] are presented by using two auxiliary parameters. The formulation allows systematic generalization to the class of simple current extensions characterized by four conditions: (1) the vanishing third cohomology, (2) skew-symmetric bimultiplicative form, (3) fixed-point-free action of simple currents, and (4) one additional condition described in the main text.",
+   "link": "https://arxiv.org/abs/2610.03725"
   },
   {
-   "id": "2610.02306",
-   "key": "2610.02306",
-   "title": "Temperature and Moduli Independence of the Supersymmetric Index from Gravity",
-   "authors": "Raghu Mahajan, Ashoke Sen",
-   "abstract": "The supersymmetric index, which gives a signed count of the microstates of black holes, can be computed directly from a gravitational path integral with appropriate boundary conditions. From general arguments based on the supersymmetry algebra, the index is expected to be independent of the temperature and, away from walls of marginal stability, of the asymptotic values of the scalar moduli. On the gravity side, this has been verified by explicit computations in many examples, but a general proof is lacking even at the classical level. We fill this gap by showing that in any four-dimensional supergravity theory with $\\mathcal{N} \\geq 2$ supersymmetry in asymptotically flat space-time, the classical contribution to the index from each supersymmetric saddle is independent of both. The argument uses only the behavior of the solution and of the Killing spinor equations near infinity. The result therefore holds in the presence of arbitrary higher-derivative corrections and for multi-centered black hole configurations. In particular, moduli independence follows without appeal to the attractor mechanism, which relies on the near-horizon geometry.",
-   "link": "https://arxiv.org/abs/2610.02306"
+   "id": "2610.03843",
+   "key": "2610.03843",
+   "title": "Comment on ''Chiral electromagnetic surface waves on Chern-Simons interfaces'' Phys.Rev.D114(2026)L051903 and on arXiv:2606.12513 by N. Kaloper",
+   "authors": "Igor Bandos, Bohdan Zvorskyi",
+   "abstract": "We demonstrate that Maxwell electrodynamics interacting with a planar Chern-Simons interface does not have plane wave solutions localized on the interface. We re-examine the derivation of such waves presented by N. Kaloper in [Phys.Rev.D114(2026)L051903] and show that at an intermediate step certain terms were missed in an equation therein. Taking these terms into account changes the final conclusion of [Phys.Rev.D114(2026)L051903]. We also show that the method used in [arXiv:2606.12513 [hep-th]] to reproduce the same result is not consistent.",
+   "link": "https://arxiv.org/abs/2610.03843"
   },
   {
-   "id": "2610.02307",
-   "key": "2610.02307",
-   "title": "A Semiclassical Entanglement Wedge in Double-Scaled SYK",
-   "authors": "Xi Dong, Jiuci Xu",
-   "abstract": "We study the entanglement structure of partially entangled thermal states in double-scaled SYK , allowing flavor degrees of freedom carried by matter insertions to be in an arbitrary mixed state. In the semiclassical limit, followed by the heavy-probe limit, our replica calculation gives a Faulkner--Lewkowycz--Maldacena formula: the boundary entropy decomposes into an `area' term (independent of the flavor state) and the bulk matter entropy in a corresponding entanglement wedge. Varying the Euclidean locations of the operator insertions produces sharp transitions in the boundary entropy, which we interpret as individual matter excitations crossing the boundary of the wedge and hence as evidence for a sharply defined entanglement wedge. To derive this result, we analyze the semiclassical behavior of general Euclidean $2n$-point functions and give a probabilistic proof of their factorization into sums over products of two-point functions. We also give a complementary derivation from exact spectral representations, using the semiclassical behavior of the quantum $6j$-symbol.",
-   "link": "https://arxiv.org/abs/2610.02307"
+   "id": "2610.03862",
+   "key": "2610.03862",
+   "title": "Complex Worldline Instantons in (Anti-)de Sitter Space",
+   "authors": "Alberto Castellano, Jinwei Chu, Eliseu Kloster, Jamie A. P. Law-Smith",
+   "abstract": "We study complex saddle points of the worldline path integral for massive charged particles in two-dimensional maximally symmetric backgrounds threaded by homogeneous electric fields. Within the worldline formalism, we show that the semiclassical saddles generically require complexifying both the target spacetime and the proper-time parameter. The resulting solutions comprise two slices of a single complex family, distinguished by the direction of proper-time evolution. The one evolving in imaginary proper time carries an action that typically controls the exponential suppression of non-perturbative effects, while that evolving in real proper time may encode additional complex phases responsible for quantum interference between saddles. Treating this family as a whole, we give a prescription for constructing and classifying all topologically inequivalent instanton sectors, and we find that the worldline action depends only on their topological data, namely winding numbers around the compact directions and certain isolated punctures. Moreover, in Anti-de Sitter spacetime, the qualitative structure of the solutions is governed by the dimensionless ratio $R |eE|/m$ ($R$ being the curvature radius), which distinguishes sub-extremal, extremal, and super-extremal regimes. By contrast, no analogous distinction occurs in de Sitter---where the instantons are insensitive to this ratio---or in Minkowski spacetime, which lacks a curvature scale altogether. We also recast the action as a sum over residues of the relevant (non-conserved) conjugate momentum, making transparent which analytic data control each contribution. Finally, we discuss the subtleties that arise when solutions built in various local patches are lifted to global (Anti-)de Sitter space. These impose further necessary conditions on which saddles can in principle contribute to the one-loop path integral.",
+   "link": "https://arxiv.org/abs/2610.03862"
   },
   {
-   "id": "2610.02309",
-   "key": "2610.02309",
-   "title": "Entanglement Requires Fluctuations at Conformal Interfaces",
-   "authors": "Yuya Kusuki, Kosei Suzuyama, Yin Tang",
-   "abstract": "We conjecture that the universal logarithmic coefficient for capacity of entanglement $c_{\\mathrm{cap}}$ is bounded below by the corresponding entropy coefficient $c_{\\mathrm{eff}}$ at conformal interfaces. We prove the bound in free boson and fermion CFTs and in holographic models with interface branes, and establish it using defect perturbation theory. Numerical calculations at interacting interfaces between the tricritical Ising and Ising CFTs further support the bound. Despite this constraint, capacity provides independent interface data. We construct interfaces with identical entropy and energy transmission coefficients but different capacity coefficients, and show that capacity can even increase as entropy decreases.",
-   "link": "https://arxiv.org/abs/2610.02309"
+   "id": "2610.03865",
+   "key": "2610.03865",
+   "title": "Magnetic Higher-Form Symmetries as Dual Fundamental $\\infty$-Groupoids",
+   "authors": "Alonso Perez-Lona",
+   "abstract": "We develop a higher-geometric framework for magnetic higher-form symmetries of pre-quantum field theories. The magnetic (topological) charges of a sigma-model with stacky target are encoded by the shape of the target, equivalently of its stack of fields, which is op-dual to the flat automorphism group controlling electric symmetries. Magnetic symmetry backgrounds are obtained by dualizing these charges against a chosen moduli stack of topological field theories, generalizing Pontryagin duality, and act on the theory by stacking. Cohesive modalities allow for targets with non-finite and non-discrete data. When the dualizing stack is a grouplike $E_\\infty$-object, we prove a fibration theorem expressing the magnetic symmetries of an electrically gauged theory in terms of those of the ungauged theory and of the gauge group, computed by a homotopy-fixed-point spectral sequence with an explicit first page. For moduli stacks of higher $U(1)$-gerbes with connection, encoding bulk topological local Lagrangians, we prove a factorization theorem: the magnetic symmetry backgrounds of any connected target split, non-canonically, into Pontryagin duals of its integral homology groups, and are necessarily flat, as a consequence of dualizing discrete charges against a target with connections. We illustrate both theorems with pure $\\mathrm{Pin}^\\pm(2)$ gauge theory: $O(2)$ carries invertible magnetic $\\mathbb{Z}_2$ symmetries in form degrees $d-3$, $d-4$ and $d-5$ that are absent for $\\mathrm{Pin}^-(2)$, the first two distinguished by a single differential of the spectral sequence. Gauging and physical applications are developed in upcoming work.",
+   "link": "https://arxiv.org/abs/2610.03865"
   },
   {
-   "id": "2610.02340",
-   "key": "2610.02340",
-   "title": "Holographic thermal propagator at finite energy from modularity and triality",
-   "authors": "Borut Bajc, Mendrit Latifi, Katarina Trailovi\\'c",
-   "abstract": "We extend the modularity-based approach of arXiv:2509.02226 for the holographic thermal propagator to the physically relevant case of nonzero energy $\\omega$. Via the AGT correspondence, the problem is mapped to $\\mathcal{N}=2$ $SU(2)$ gauge theory with $N_f=4$ hypermultiplets. Turning on $\\omega$ activates all four hypermultiplet masses, so that the full $SO(8)$ flavor symmetry constrains the low-temperature expansion, rather than the subgroup left unbroken at $\\omega=0$. As a result, the building blocks of the expansion are no longer just Eisenstein series but also Jacobi theta functions. We use this fact, together with the Molien series of the resulting invariant ring and the modular anomaly equation, to fix the low-temperature expansion coefficients order by order, matching only a finite number of terms in the Zamolodchikov's $q$-recursion at each order. We obtain the low-temperature expansion of the propagator and find agreement with the result of a completely different method, the near-boundary expansion of the bulk wave equation.",
-   "link": "https://arxiv.org/abs/2610.02340"
+   "id": "2610.03874",
+   "key": "2610.03874",
+   "title": "SU($N$) QCD, four-manifolds and Segre numbers",
+   "authors": "Elias Furrer, Ranveer Kumar Singh",
+   "abstract": "We study correlation functions of topologically twisted $\\mathcal N=2$ supersymmetric QCD with gauge group $\\mathrm{SU}(N)$ on a compact four-manifold $X$. We derive the Coulomb branch integral for all $N$, including new couplings to background fluxes for the flavor symmetry. For $X$ of simple type with $b_2^+>1$, the correlators become sums over a finite number of strong-coupling singularities on the Coulomb branch, and can be expressed using a number of Coulomb branch couplings. The sum contains the $\\mathcal N=1$ vacua, which become the supersymmetric vacua when the $\\mathcal N=2$ theory is broken to $\\mathcal N=1$ by an adjoint mass deformation, and whose contribution we attribute to the instanton branch. We focus on asymptotically free $\\mathrm{SU}(N)$ QCD with $N_f<2N$ equal mass hypermultiplets, and conjecture that its instanton contribution to topological correlators agrees with the generating function of virtual Segre numbers of rank $N$, which are intersection numbers on the moduli space of semistable sheaves on an algebraic surface. We present a precise dictionary for all $N$ between universal series for Segre numbers and Coulomb branch couplings at the $\\mathcal N=1$ vacua. The calculation of these couplings requires new higher-rank techniques, involving Siegel modular forms, an exact $\\mathbb Z_N$ symmetry, charge conjugation symmetry, factorisation of the Seiberg--Witten curve, and the blowup formula. For pure $\\mathrm{SU}(N)$, our result agrees with earlier work by Mari\\~{n}o and Moore, and the twisted correlators give the $\\mathrm{SU}(N)$ Donaldson invariants of $X$. For $\\mathrm{SU}(3)$ QCD, we determine closed-form expressions for all 13 Coulomb branch couplings for each $N_f=1,\\dots, 5$, and find precise agreement with results of G\\\"ottsche and Kool for virtual rank 3 Segre numbers.",
+   "link": "https://arxiv.org/abs/2610.03874"
   },
   {
-   "id": "2610.02406",
-   "key": "2610.02406",
-   "title": "Where in the Island is the Information?",
-   "authors": "T. Banks",
-   "abstract": "The Island Formula for Quantum Extremal Surfaces of large AdS black holes, which are made to evaporate by coupling the CFT of the AdS/CFT correspondence to an external system, demonstrates that the space time picture can reproduce the quantum mechanically required Page curve of the CFT/bath system if a region in the interior of the black hole has become entangled with the external radiation by the Page time. In an effective quantum field theory (EFT) description in ``nice slice\" coordinates, this appears to imply paradoxical entanglement between degrees of freedom that have been causally disconnected since long before the Page time. We will give two arguments that all of the quantum information in the island is in fact concentrated in a tiny space-like portion of the island very close to the black hole horizon at the Page time. The first applies the covariant entropy bound\\cite{fsb} (CEB) to the causal diamonds of geodesics originating on the space-like region that becomes the island, but on a time slice just before the Page time. All points on the island except those in a stretched horizon region very close to the horizon have entropy bounds that are tiny fractions of the black hole entropy. The second argument uses standard quantum statistical mechanics combined with the tensor network renormalization group regularization of CFT to argue that the wave function of a typical pure state in the microcanonical evaporating black hole always has most of its probability concentrated in a small range of wavelengths corresponding to a small range of radii in the dual tensor network/AdS slice.",
-   "link": "https://arxiv.org/abs/2610.02406"
+   "id": "2610.03929",
+   "key": "2610.03929",
+   "title": "Quantum covariant bit threads",
+   "authors": "Matthew Headrick, Sreeman Reddy Kasireddy, Andrew Rolph",
+   "abstract": "Entanglement entropy plays a central role in holography. The quantum extremal surface (QES) formula is the standard tool in settings where both dynamics and bulk quantum corrections are important, such as in black hole evaporation. We derive and explore QES-equivalent prescriptions --- quantum covariant bit threads --- that formulate holographic entanglement entropy in terms of minimal or maximal bulk flows rather than extremal surfaces. Like classical covariant bit threads, our prescriptions come in two types: (typically) spacelike V-flows, and timelike U-flows. To account for bulk quantum corrections, the flow lines can start and end at points in the bulk, with the distribution of endpoints controlled by bulk entanglement entropies. In our bit thread language, the QES is a quantum bottleneck to the flow, with some threads passing through it (accounting for the area term in the generalized entropy) and others jumping across it (accounting for the entropy term). Our prescriptions provide a complementary perspective to the QES formula and offer new insights on important phenomena such as black hole evaporation, islands, and baby universes.",
+   "link": "https://arxiv.org/abs/2610.03929"
   },
   {
-   "id": "2610.02415",
-   "key": "2610.02415",
-   "title": "Non-linear electrodynamics emerging from a Lorentz-symmetry violation scenario",
-   "authors": "M. J. Neves, G. Peruzzo",
-   "abstract": "The effective action at one-loop for the quantum electrodynamics (QED) in the presence of background vectors and tensors that break the Lorentz symmetry is calculated in this work. We highlight that just the Lorentz symmetry violation through the Dirac matrices in the fermionic sector is considered since investigations in others sectors of the extended QED has been explored in recent papers. Using the proper time method, we show that some background vectors and tensors do not contribute to the effective action at one-loop and in the linear approximation. Thereby, only two background tensors contribute to the effective action at one-loop for small components of these tensors, and that a new combination of cubic and quartic non-linear electrodynamics emerge in the weak field regime.",
-   "link": "https://arxiv.org/abs/2610.02415"
+   "id": "2610.03950",
+   "key": "2610.03950",
+   "title": "Exact effective central charges for a family of 3d superconformal field theories",
+   "authors": "Griffen Adams",
+   "abstract": "We conjecture an exact formula for the effective central charge, ceff, of a family of three- dimensional superconformal field theories related to Chern-Simons theory on a three-manifold by the 3d-3d correspondence. The formula determines ceff , which governs the growth of a protected sector of states in the conformal theory, in terms of the dimension of a particular space of modular forms. We confirm our approach by checking against known results computed through resurgent continuation.",
+   "link": "https://arxiv.org/abs/2610.03950"
   },
   {
-   "id": "2610.02423",
-   "key": "2610.02423",
-   "title": "Note on the Pure State of Old Black Holes in Some Models of Asymptotically Flat Quantum Gravity",
-   "authors": "T. Banks",
-   "abstract": "We analyze two old models of black holes to see whether they realize the AdS/CFT paradigm of ``multiple representations of bulk data by boundary states that differ only in the expectation value of exponentially complex operators\" . We find that the explanation of the firewall paradox in these models is much simpler and corresponds to the naive way entanglement is resolved when small constituents escape from a complex chaotic quantum system. The real issue is that the quantum field theory (QFT) picture of the states near the boundary of a causal diamond is wrong. The phrase in quotes above is correct in our models because most of the states associated with any causal diamond cannot be associated with ANY states in quantum field theory.",
-   "link": "https://arxiv.org/abs/2610.02423"
+   "id": "2610.04065",
+   "key": "2610.04065",
+   "title": "Wilson line defect indices for M2-brane SCFTs",
+   "authors": "Hirotaka Hayashi, Tomoki Nosaka, Tadashi Okazaki",
+   "abstract": "We investigate line defect Coulomb and Higgs indices in 3d $\\mathcal{N}\\ge 4$ supersymmetric gauge theories. The normalized line defect indices defined by ratios of the decorated defect indices to the ordinary indices yield well-defined integer values, the line defect Witten indices in the unit R-charge fugacity limit. We propose general formulae for these Witten indices in both Coulomb and Higgs limits for the theories without Chern-Simons terms, and we show that both count the states invariant under the residual gauge group left unbroken at a generic point of the branch, which we read off from the vacuum equations. Furthermore, we find powerful algebraic recursion relations for Wilson line defect Coulomb indices in the 3d SCFTs describing M2-branes, including ADHM-type theories and ABJ(M) theories. These relations imply that higher rank line defect indices are recursively determined by lower rank data across $U(N)$, $USp(2N)$, $SO(2N)$ and $SO(2N+1)$ ADHM-type theories and ABJ(M) theories.",
+   "link": "https://arxiv.org/abs/2610.04065"
   },
   {
-   "id": "2610.02964",
-   "key": "2610.02964",
-   "title": "Ultraviolet dissipation and defect OPE in bottom-up holographic interfaces",
-   "authors": "Mianqi Wang",
-   "abstract": "We study the radial ultraviolet dissipation quantity $c_{UV}$ defined in arXiv:2601.16888v3 and defect OPE data in bottom-up holographic interfaces. We relate $c_{UV}$ along with the defect primary spectrum and BOPE coefficients in the large defect dimension limit to the optical length $\\rho$ in the holographic bulk. In addition, we prove a new holographic bound for conformal interfaces relating entanglement entropy, energy transmission and UV dissipation: \\[ c_{LR}\\geq \\frac{2c_{\\mathrm{eff}}}{2+\\pi(c/c_{\\mathrm{UV}}-1)}. \\] This compliments the upper bound of $c_{LR}$ by $c_\\text{eff}$ proved in arXiv:2404.01515.",
-   "link": "https://arxiv.org/abs/2610.02964"
+   "id": "2610.04131",
+   "key": "2610.04131",
+   "title": "Anomaly-free six-dimensional $Sp(1)_R$-gauged supergravities",
+   "authors": "Katrin Becker, Ergin Sezgin, Qi You",
+   "abstract": "We study anomaly constraints in six-dimensional $N=(1,0)$ supergravity with gauged $Sp(1)_R$ symmetry, one tensor multiplet, $n_V$ vector multiplets and $n_H$ hypermultiplets. Imposing cancellation of local gravitational, gauge and mixed anomalies, together with the embedding of the anomaly coefficients in a unimodular rank-two string charge lattice, the number of vector multiplets is sharply constrained: the only allowed positive values are $n_V=12$ and $n_V=96$. For a neutral abelian factor, or drone, the anomaly equations force the corresponding row and column of the abelian gauge-kinetic matrix to vanish. Such a factor therefore cannot be retained as an ordinary propagating vector multiplet. For $n_V=96$, within the class of semisimple non-$R$ gauge algebras containing no $A_1$ or $A_2$ factor, the exhaustive spectra-assembly calculation yields no drone-free spectrum. For $n_V=12$, the semisimple non-$R$ branch is necessarily $A_1^3$. In the doublet/adjoint truncation described in the text, we find $4{,}337{,}331$ consistent models, classified by $102$ anomaly-vector classes. We also consider the reductive branch $A_2\\times U(1)\\times Sp(1)_R$. For $A_2$ representations in $\\{\\mathbf 1,\\mathbf 3,\\overline{\\mathbf 3}, \\mathbf 6,\\overline{\\mathbf 6},\\mathbf 8\\}$ and primitive $U(1)$ charge assignments with $|q|\\le 2$, we find $178{,}538$ solutions, classified by $21$ sets of anomaly vectors.",
+   "link": "https://arxiv.org/abs/2610.04131"
   },
   {
-   "id": "2610.03397",
-   "key": "2610.03397",
-   "title": "Anisotropic Domain Walls and Cosmologies",
-   "authors": "W. A. Sabra",
-   "abstract": "We investigate anisotropic domain wall and cosmological solutions in $D$-dimensional gravitational theories of arbitrary spacetime signature coupled to scalar fields with a scalar potential. We identify a class of scalar potentials for which the second-order equations of motion admit a first-order formulation. The associated bosonic flows allow non-trivial Ricci-flat worldvolumes, while their Killing-spinor realization further requires the worldvolume to admit a non-vanishing parallel spinor. Five-dimensional ${\\cal N}=2$ gauged supergravity provides a concrete realization of this construction, with the worldvolume geometry determined by its signature and giving rise to pp-wave, hyper-K\\\"{a}hler, and hypersymplectic geometries. We further construct a general class of anisotropic solutions depending on a single variable, with the anisotropy encoded in a constant traceless matrix. A particular branch arises when a subset of scalar fields contribute through their kinetic terms but do not enter the scalar potential; these fields follow geodesics on the scalar manifold. As an explicit application, we recover the Kasner-dilaton-AdS solutions and show that, in the appropriate limit, they satisfy the first-order flow equations.",
-   "link": "https://arxiv.org/abs/2610.03397"
+   "id": "2610.04218",
+   "key": "2610.04218",
+   "title": "Higher-form Symmetries of Linearized Gravity in Maximally Symmetric Spaces",
+   "authors": "Natsuya Kido",
+   "abstract": "We formulate the gravitational field on maximally symmetric spacetimes as a gauge theory, and investigate higher-form symmetries of the linearized gravitational field via a series expansion in Newton's gravitational constant. To treat gravity as a gauge theory, the MacDowell-Mansouri formulation based on Cartan geometry is utilized. We show the existence of a 1-form symmetry in linearized gravity on Minkowski spacetime. Furthermore, for other maximally symmetric spacetimes (de Sitter and anti-de Sitter spacetimes) with a small cosmological constant, we demonstrate the existence of an approximate 1-form symmetry in the corresponding linearized gravity, detailing its explicit dependence on the cosmological constant.",
+   "link": "https://arxiv.org/abs/2610.04218"
   },
   {
-   "id": "2610.03485",
-   "key": "2610.03485",
-   "title": "On the Stability of Warped Anti-de Sitter Spaces in Supergravity",
-   "authors": "S. Maurelli, R. Noris, M. Oyarzo, A. Saha, H. Samtleben, M. Trigiante",
-   "abstract": "We discuss the perturbative stability of warped anti-de Sitter (WAdS$_3$) spaces in three-dimensional gauged supergravity. To this end, we first derive the analogue of the Breitenlohner-Freedman bound for a single scalar field on such a curved background. We then apply this analysis to the half-maximal $D=3$ gauged supergravity obtained from the compactification of the $D=6$, $\\mathcal{N}=(1,1)$ supergravity on S$^3$. Families of three-dimensional configurations, uplifting to spaces of the form $\\mathrm{WAdS}_3 \\times \\mathrm{WS}^3$, are found by turning on appropriate vector and scalar fields, supporting the AdS$_3$ and S$^3$ warpings, respectively. Finally, we show that the spectra of scalar fluctuations satisfy the stability criteria for each solution.",
-   "link": "https://arxiv.org/abs/2610.03485"
+   "id": "2610.04476",
+   "key": "2610.04476",
+   "title": "Wald entropy and Wen-Zee type gauge-curvature coupling in 2+1-dimensional gravity",
+   "authors": "Aryan Bhatia, Giandomenico Palumbo, Suraj S. Hegde",
+   "abstract": "The Wen-Zee term is a mixed gauge-curvature coupling in the topological Chern-Simons description of a quantum Hall fluid, encoding the electric charge bound to spatial curvature. We investigate a Lorentz-covariant generalisation of this coupling, expanding its scope to black-hole spacetimes and determine its contribution to horizon entropy. Such a coupling arises naturally in three-dimensional Chern-Simons gravity based on the Maxwell algebra. We show that its Wald entropy contribution is a horizon boost charge, given by a loop integral of the additional gauge field projected along the tangent to the bifurcation circle. This contribution can be nonzero even when the mixed term vanishes on shell. We show that the integral admits an Abelian holonomy interpretation when the projection direction is covariantly constant. We evaluate the charge on a flat cosmological solution and, using smooth horizon fields and a specified thermal ensemble, on an AdS-Lorentz black hole. These results connect the geometric response familiar from quantum Hall physics to gravitational horizon thermodynamics.",
+   "link": "https://arxiv.org/abs/2610.04476"
   },
   {
-   "id": "2610.03495",
-   "key": "2610.03495",
-   "title": "Carrollian Worldsheets on Carrollian Targets, When does ILST describe a null string theory?",
-   "authors": "M. M. Sheikh-Jabbari, H. Yavartanoo",
-   "abstract": "Null string theory (NST) is a two-dimensional (2d) sigma-model on a Carrollian worldsheet with 2d diffeomorphisms, Weyl and Carroll-Weyl (CW) scalings as gauge symmetries whereas the Isberg-Lindstr\\\"om-Sundborg-Theodoridis (ILST) theory on a generic target space only realizes the first two and not the CW gauge symmetry. We show in this work that NST on the Carrollian target spaces (CTS) is well-defined if the background admits a homothetic kernel generator and that, it is described by the ILST theory on the same CTS. To this end, we formulate a minimal null string theory on CTS, starting from first principles and then discuss beyond minimal theories as deformations away from minimality. We study some classes of such deformations involving the clock one-from for ruled Carrollian spaces and/or connection on the Carrollian space. We discuss implications of this for the recently introduced null string holography. As examples CTS, we briefly discuss null strings probing black hole horizons and the null string holography in this context.",
-   "link": "https://arxiv.org/abs/2610.03495"
+   "id": "2610.04729",
+   "key": "2610.04729",
+   "title": "Majorana bilinears, compact modular seeds and the approach to the Tsirelson bound",
+   "authors": "M. S. Guimaraes, I. Roditi, S. P. Sorella",
+   "abstract": "In this work we study the Bell-CHSH inequality in the vacuum of the free massive Majorana field in $1+1$ dimensions, taking as the dichotomic observables of the two parties even bilinears of smeared fields localized in the right and in the left Rindler wedges. The test functions are generated from seeds in the modular-frequency variable through the Tomita-Takesaki operator of the right wedge and, on the side of the left wedge, through its adjoint multiplied by $i$, which accounts for twisted duality. For seeds supported at positive modular frequency the one-particle overlaps between the two parties do not depend on the modular weights, and we obtain the Bell parameter in closed form. When the seeds are phase rotations of a single compact bump, the bilinears generate a copy of the Pauli algebra in each wedge, and we compute exactly the correlation matrix of the vacuum restricted to the two copies. The optimal settings violate the classical bound up to spectral widths more than twice as large as those reached with planar settings. We also show that the Tsirelson bound is never attained in the wedge vacuum for any choice of dichotomic observables, and that approaching it forces the modular spectral weight of the Bell vectors to concentrate at the spectral point $\\lambda=1$ of the modular operator. This establishes in a precise way how the even sector of the free Majorana field realizes the Summers-Werner mechanism.",
+   "link": "https://arxiv.org/abs/2610.04729"
   },
   {
-   "id": "2610.03514",
-   "key": "2610.03514",
-   "title": "Generalized eigenstate thermalization beyond leading order in 2D large c CFTs",
-   "authors": "Ziyuan Wang, Jiaju Zhang",
-   "abstract": "We develop a Fock-space formulation that reduces expectation values of vacuum-family quasi-primaries in qKdV eigenstates of arbitrary highest-weight conformal families to a free-bosonic problem, and employ it to test the generalized eigenstate thermalization hypothesis (GETH), in 2D conformal field theories with large central charge $c$. We demonstrate that the first two quantum Korteweg--de Vries (qKdV) charges $Q_1$ and $Q_3$ lift all degeneracies except along at most countably many curves in the $(c,\\Delta)$ plane, where $\\Delta$ is the highest weight of the conformal family, so that the full-qKdV simultaneous eigenstates are unambiguously determined by $Q_1$ and $Q_3$. Based on this, a near-complete toolkit for testing in the vacuum conformal family or falsifying the general form of GETH, i.e. equating qKdV eigenstates and thermal states of the generalized Gibbs ensemble in the sense of expectations of local observables, is provided in this paper, through the infinite tower of qKdV charges. A stronger form of the GETH, namely that all expectations of local observables of a definite level should be expressible of qKdV charges but not contain microscopic eigenstate information, is directly falsified at subleading order in the large-$c$ expansion. At levels 6 and 8 in the vacuum family, expectation values of quasi-primaries in simultaneous eigenstates of the qKdV charges are not fixed by first finitely many qKdV charges, and microscopic information of the eigenstate is required.",
-   "link": "https://arxiv.org/abs/2610.03514"
+   "id": "2610.04804",
+   "key": "2610.04804",
+   "title": "An Observer in de Sitter Space, and Rereading Everett",
+   "authors": "Edward Witten",
+   "abstract": "After re-examining a classic article by Hugh Everett, I will discuss the entropy of de Sitter space from the standpoint of an observer living in the space. This provides a nice example of the importance -- for certain questions -- of taking seriously the fact that in cosmology any observer is really part of the universe that is being observed. (This article has appeared in a special issue of International Journal of Modern Physics A in honor of Gerard 't Hooft.",
+   "link": "https://arxiv.org/abs/2610.04804"
   },
   {
-   "id": "2610.03554",
-   "key": "2610.03554",
-   "title": "Unfolded Schwinger-Dyson hierarchy for vertex functions",
-   "authors": "Nikita Misuna",
-   "abstract": "We propose a formulation of a quantum field theory within the framework of the unfolded dynamics approach, originally developed in higher-spin gauge theory. We construct an unfolded system that describes a hierarchy of Schwinger-Dyson equations for vertex functions of a scalar QFT in terms of unfolded first-order equations. A distinctive feature of the constructed system is the appearance of two additional evolution parameters responsible for the WKB and RG behaviors. As an illustration, a one-loop analysis of the theory with quartic self-interaction is carried out.",
-   "link": "https://arxiv.org/abs/2610.03554"
+   "id": "2610.04858",
+   "key": "2610.04858",
+   "title": "Scalar potential bounds on one-parameter Calabi-Yau threefolds with fluxes",
+   "authors": "Nana Geraldine Cabo Bizet, Jos\\'e de J. P\\'erez Lona",
+   "abstract": "We study the refined de Sitter conjecture (RdSC), the Trans-Planckian Censorship Conjecture (TCC) and the species scale $\\Lambda_s$ in the multifield flux potential of type IIB string theory compactified on one-parameter Calabi--Yau threefolds. The scalar potential depends on the axio-dilaton and on the single complex-structure modulus, and is no-scale along the K\\\"ahler directions. Restricting to $h^{2,1}=1$ allows us to work with the exact periods obtained from the Picard--Fuchs equations rather than with their large-complex-structure expansion, and therefore to probe the conifold region. For the mirror quintic, $(h^{2,1},h^{1,1})=(1,101)$, we scan 200 flux configurations and find unstable extrema in $96\\%$ of the cases, with $c'=0.18$. Once the K\\\"ahler runaway is taken into account, the no-scale structure fixes the logarithmic slope of the potential at every critical point to the universal value $\\sqrt6$, so that the first RdSC condition is satisfied throughout. Statistically, the complex structure is the heavier sector and the axio-dilaton dominates the unstable directions. For the TCC we obtain analytic results valid for the whole class of one-parameter models: the slope approaches the universal value $2$ at large complex structure, diverges at the conifold, and equals exactly $\\sqrt2$ in the axio-dilaton directions, where the leading potential takes a single $SL(2)$-covariant form, as the multifield evolutions confirm numerically. The TCC further translates into a lower bound on the compactification volume, $v>v_0\\sim e^{N}$, controlled by the number of e-folds. Finally, the field displacements along our trajectories are compatible with the species-scale field-range bound, and restoring the volume dependence of $\\Lambda_s$ shows that $V\\lesssim3\\Lambda_s^2$ is implied by the TCC volume bound, which is thus the genuine constraint on these models.",
+   "link": "https://arxiv.org/abs/2610.04858"
   },
   {
-   "id": "2610.03576",
-   "key": "2610.03576",
-   "title": "Sharp null-energy lower bounds for Page-like entropy excursions in two-dimensional conformal field theory",
-   "authors": "Soufiane Karmoudi, Mohammed Daoud",
-   "abstract": "We derive sharp lower bounds on the energy cost of Page-like entanglement entropy excursions in two-dimensional conformal field theory. For states satisfying the primary quantum null energy condition (QNEC), the positive null energy \\(E_+\\) obeys a sharp lower bound with two branches separated by the threshold \\(\\Delta S=(c/6)\\ln 2\\). We also derive a sharp lower bound on the net energy \\(E_{\\rm net}\\), with a coefficient larger by a factor of two than the value quoted by Abdolrahimi and Page [Phys. Rev. D 92, 083005 (2015)] and, in the QNEC-saturating sector, we obtain a sharp lower bound on the negative energy \\(E_-\\). The constants are sharp as infima over smooth conformal vacua. We determine the entropy profiles that minimize \\(E_+\\) for general QNEC states and the one that minimizes \\(E_-\\) in the saturating sector. Finally, for an excursion containing an infinite sequence of small sub-excursions within a finite duration, we derive a necessary condition for the total positive energy to remain finite, which is stronger than requiring the entropy to have finite total variation.",
-   "link": "https://arxiv.org/abs/2610.03576"
+   "id": "2610.04909",
+   "key": "2610.04909",
+   "title": "The Phenomenology of the Dark Dimension and Non-Supersymmetric Strings",
+   "authors": "Cumrun Vafa",
+   "abstract": "Swampland principles, combined with the smallness of dark energy $\\Lambda$, lead to the dark dimension scenario, with one extra dimension of micron size. We review this scenario and its predictions: KK graviton dark matter (or the KK tower of the quintessence field into which the gravitons convert), neutrino masses tied to $\\Lambda^{1/4}$ via a bulk $B-L$ gauge symmetry, QCD axion decay constant $f_a\\sim \\Lambda^{1/12}\\sim 10^9-10^{10}$ GeV at the 5d Planck scale $M_5$, connecting electroweak hierarchy to $\\Lambda^{1/6}$, and a relation between the GUT and weak scales with $M_5$ as the geometric mean. The dark dimension also provides a concrete realization of an evolving dark sector: the evolution of its diameter correlates the variation of dark energy with that of the dark matter mass, fitting the recent DESI DR2 (+CMB+supernovae) data while avoiding the phantom crossing that the $w_0w_a$CDM parametrization would suggest---the apparent phantom behavior instead arises from the evolving dark matter mass. The fits suggest that the dark energy field sits in the interior of moduli space, near an unstable critical point. Motivated by this, we review recent progress on non-supersymmetric string vacua: isolated critical points protected by duality symmetries, in non-geometric flux compactifications and in Scherk--Schwarz compactifications of M-theory, and an emerging duality web for non-supersymmetric strings. This note is based on two talks given by the author at String Phenomenology 2026 (Paris) and Strings 2026 (Shanghai).",
+   "link": "https://arxiv.org/abs/2610.04909"
   },
   {
-   "id": "2610.03606",
-   "key": "2610.03606",
-   "title": "Non-Renormalizability Properties of Quarter-BPS Correlators in $\\mathcal{N}$=4 SYM",
-   "authors": "Agnese Bissi, Giulia Fardelli, Hector Puerta-Ramisa",
-   "abstract": "We study extremal and next-to-extremal four-point correlators involving general quarter-BPS operators in $\\mathcal{N}$=4 Super Yang-Mills. Using a combination of $R$-symmetry considerations, operator product expansion content, and analytic superspace techniques, we show that such correlators get contributions only from operators belonging to short and semi-short multiplets. This result together with the non-renormalizability of the relevant three-point functions guarantees that all such four-point correlators are protected from quantum corrections.",
-   "link": "https://arxiv.org/abs/2610.03606"
+   "id": "2610.04962",
+   "key": "2610.04962",
+   "title": "$BF$ effective action topological implications",
+   "authors": "Erika Amador-Ramos, Aldo Mart\\'inez-Merino, Roberto Santos-Silva",
+   "abstract": "We investigate the effective action of a 7-dimensional topological $BF$ theory under a 4-dimensional reduction. We discuss the topological implications of the resulting theory and analyze the corresponding field equations. In particular, we derive exact solutions to these equations of motion in both Minkowski and Schwarzschild spacetimes.",
+   "link": "https://arxiv.org/abs/2610.04962"
   },
   {
-   "id": "2610.03652",
-   "key": "2610.03652",
-   "title": "Quantum Gravity from Gluing Consistency: AdS/CFT to Spin-Foams",
-   "authors": "Chethan Krishnan",
-   "abstract": "We argue that BF theory with $SO(d+1,1)$ gauge group provides a SymTFT ''skeleton'' for building AdS$_{d+1}$/CFT$_d$ pairs via gluing consistency as the bootstrap principle, loosely analogous to how compact Chern-Simons theory is a TQFT skeleton for rational CFTs. This is a non-perturbative $bulk$ framework for quantum gravity. The bootstrap is formulated as presentation independence of physical amplitudes within a universal, defect-closed BF sewing calculus, which includes Wilson lines, codimension-two monodromy defects, and their junctions. The flat BF connection encodes the conformal geometry of the boundary, while Wilson-line path integrals construct candidate quantum-gravity microstates and charge sectors. When the bootstrapped spectrum has a stress tensor, Ward identities naturally connect it to the $B$-field, a relation we call generalized simplicity. In large-$N$, large-gap regimes admitting a gravitational EFT, this motivates the introduction of an effective notion of the $B$-field. In the Einstein limit, this becomes the ''simplicity'' relation used in spin-foam models. Conventional spin-foam models reach gravity by constraining BF theory. We suggest instead that BF theory is the Platonic sewing skeleton, from which theories are to be bootstrapped. Despite the topological nature of the skeleton, perturbative local bulk fields can emerge via Wilson-towers of multi-trace primaries, reproducing their one-loop determinants. We note that the BF Fourier kernel is a suggestive higher-dimensional analogue of the modular-$S$ structure. Because the bulk gluing principle in itself does not require a boundary description, the framework is conceptually broader than AdS/CFT. We sketch how de Sitter space may fit into this picture, with a natural role for observers. Our approach elevates gluing consistency to a universal bulk principle underlying theories of quantum gravity.",
-   "link": "https://arxiv.org/abs/2610.03652"
+   "id": "2610.05208",
+   "key": "2610.05208",
+   "title": "From Critical Zero Modes to Interior Dynamics in Holographic Superconductors",
+   "authors": "Yan Liu, Hong-Da Lyu",
+   "abstract": "We study how the critical behavior of holographic superconductors controls the interior geometry of charged black holes. Although the exterior condensate vanishes at criticality, the critical zero mode develops logarithmic oscillations near the Reissner--Nordstr\\\"om Cauchy horizon, rendering the interior critical limit nonuniform. We show that the transmitted critical-mode amplitude, together with local Cauchy-horizon quantities, fixes both the leading Einstein--Rosen collapse $\\Delta z_{\\rm ER}$ width and the phase $\\Theta_J$ in the subsequent Josephson regime. If the condensate obeys $t\\equiv1-T/T_c\\propto\\epsilon^{2r}$, then $\\Delta z_{\\rm ER}\\propto t^{1/r}$ and $\\Theta_J\\propto t^{-1/r}$. This Josephson phase is transferred to the first Kasner epoch, producing oscillatory Kasner exponents and an accumulation law $t_n\\sim n^{-r}$ for successive zeros of the scalar velocity. The critical zero mode fixes the leading collapse and phase coefficients, which are quantitatively confirmed by fully nonlinear solutions in both the ordinary and tricritical cases. At low temperature, the interior instead depends on the infrared completion of the zero-temperature geometry. Thus near-critical scaling is governed by critical-mode transmission, whereas the low-temperature behavior is controlled by the infrared endpoint.",
+   "link": "https://arxiv.org/abs/2610.05208"
   },
   {
-   "id": "2610.03708",
-   "key": "2610.03708",
-   "title": "Quantum Love and ringdown near extremality",
-   "authors": "Arindam Bhattacharjee, Muktajyoti Saha, M. V. S. Saketh",
-   "abstract": "In this paper we discuss the quasinormal modes and the tidal responses of a four-dimensional asymptotically flat Reissner-N\\\"{o}rdstrom black hole near extremality and investigate the nontrivial near-horizon quantum corrections of these observables. The near-horizon dynamics of near extremal black holes are generally governed by an effective Schwarzian action coupled to boundary gauge modes. We use this description and couple this effective theory with a massless scalar field outside. Using this setup we compute $2 \\to 2$ scattering process of a black hole and a scalar particle. The poles of the scattering amplitude at complex frequencies give us the quasinormal mode spectrum and we recover the predicted zero damped modes near extremality at leading order. Next we evaluate the static Love numbers from the elastic limit of the scattering amplitude. We show that the static Love numbers are non-zero in contrast to the classical expectations. Very close to extremality, the behaviour is analytic, but as the near-extremal energy becomes sufficiently large, we find logarithmic dependence on the energy. This cannot be removed by the choice of renormalisation scheme. Thus near-horizon quantum effects non-trivially change the tidal response of near-extremal black holes.",
-   "link": "https://arxiv.org/abs/2610.03708"
+   "id": "2610.05406",
+   "key": "2610.05406",
+   "title": "Inflationary magnetogenesis in Proca electrodynamics with Schwinger particle production",
+   "authors": "Mattia Dubbini, Orlando Luongo",
+   "abstract": "We investigate inflationary magnetogenesis with massive vector fields, including charged scalar particle production via the Schwinger effect and its backreaction on the background electric energy density. Initially neglecting the Schwinger effect, we quantize the vector field and solve the equations of motion for transverse and longitudinal modes, computing the energy momentum tensor. We then incorporate the backreaction of the electric energy density and show that the longitudinal energy density is subleading compared to the electric background. Since the electric energy density dominates the magnetic contribution, we can treat the former separately from the perturbative contributions. We adopt this approach when studying particle production via the Schwinger effect, assuming that its backreaction acts only on the background electric energy density. The latter is computed using a classical background electromagnetic field minimally coupled to a quantum complex scalar field. The magnetic and longitudinal components are instead described through quantum fields. In this framework, the Schwinger production affects only the electric energy density, as long as it remains dominant compared to the other components. As a consistency check, we verify that for a null coupling constant we recover the same electric energy density as obtained within the fully quantum electromagnetic description. Finally, we show that for non-null coupling constants Schwinger particle production drastically reduces the electric energy density during the final stages of inflation.",
+   "link": "https://arxiv.org/abs/2610.05406"
+  },
+  {
+   "id": "2610.05460",
+   "key": "2610.05460",
+   "title": "Extremal black hole throats from non extremal near horizon expansions",
+   "authors": "Anirudhda Shinde, Mangesh Mandlik",
+   "abstract": "We show how extremal near horizon geometries can be recovered from the non extremal near horizon expansion for smooth stationary black hole families admitting a smooth extremal limit. In Gaussian null coordinates common to the family, we apply the near extremal scaling of the surface gravity together with a radial scaling and a rescaling of Killing time. Although the physical surface gravity vanishes, the scaled horizon can retain a finite surface gravity. The extremal near horizon geometry is obtained when this scaled surface gravity is taken to zero. Under the near extremal scaling and the time rescaling, the quadratic radial term in the temporal metric component can survive, while higher radial orders vanish. Expansion through second order is therefore sufficient and is necessary whenever the quadratic term has a nonzero limiting coefficient in the chosen chart. We derive a common pullback prescription for extracting the near horizon coefficients and recover the known throats of Reissner-Nordstr\\\"om, Kerr, Kerr-Newman, and charged rotating Ba\\~nados-Teitelboim-Zanelli (BTZ) black holes. Neutral rotating BTZ provides a case in which the string Carroll expansion already suffices.",
+   "link": "https://arxiv.org/abs/2610.05460"
+  },
+  {
+   "id": "2610.05760",
+   "key": "2610.05760",
+   "title": "More on the Celestial Soft Symmetry Algebra in the ${\\cal N}=8$ Supergravity",
+   "authors": "Changhyun Ahn",
+   "abstract": "We construct the operator product expansions (OPEs) of the ${\\cal N}=8$ ${\\rm w}_{1+\\infty}$ currents (obtained from the antiholomorphic light transform) with the matter fields in the ${\\cal N}=8$ supergravity. The corresponding (anti)commutators are obtained from the double contour integrals using the above OPEs. By computing the triple (anti)commutators consisting of current-current-matter (i.e., the Jacobi identity for fixed last element), the previously known ${\\cal N}=8$ celestial soft symmetry algebra between these currents (in the antiholomorphic sector) is reproduced. We repeat the above procedure by taking the holomorphic light transform and the OPEs of the ${\\cal N}=8$ ${\\rm \\bar{w}}_{1+\\infty}$ currents with the matter fields and the corresponding (anti)commutators are obtained. We also obtain another type of ${\\cal N}=8$ celestial soft symmetry algebra between these currents (in the holomorphic sector). As a subalgebra in the antiholomorphic and holomorphic sectors, there exists the ${\\cal N}=8$ extended BMS (Bondi, van der Burg, Metzner, and Sachs in 1962) algebra. We analyze the above results from the ${\\cal N}=8$ conformally {\\it soft} ${\\rm w}_{1+\\infty}$ (or ${\\rm \\bar{w}}_{1+\\infty}$) currents in the antiholomorphic (or holomorphic) sector. The nontrivial soft theorems for the graviton, the gravitinos and the graviphotons are described. Finally, using the shadow transform (the consecutive composition of holomorphic and antiholomorphic light transforms), we obtain the OPEs of the ${\\cal N}=8$ {\\it shadow} ${\\rm w}_{1+\\infty}$ (or ${\\rm \\bar{w}}_{1+\\infty}$) currents with the matter fields where the stress-energy tensor, the supercurrents and the supertranslation generator of the ${\\cal N}=8$ extended BMS algebra are identified.",
+   "link": "https://arxiv.org/abs/2610.05760"
+  },
+  {
+   "id": "2610.05798",
+   "key": "2610.05798",
+   "title": "Einstein--Maxwell Sum Rules and the Persistence of the Smooth-Brane No-Go Theorem",
+   "authors": "Paulo Michel Longo Tavares da Silva",
+   "abstract": "We investigate whether a minimally coupled Abelian Maxwell sector can relax the Gibbons--Kallosh--Linde (GKL) obstruction to smooth five-dimensional warped braneworlds. For a canonical scalar field coupled to a bulk Maxwell field, we derive the one-parameter family of global consistency conditions while keeping the tangential F_{{\\mu}{\\nu}} and mixed F_{{\\mu}5} sectors separate. This decomposition is essential because the Maxwell stress tensor is not traceless in five dimensions. We show that electromagnetic terms formally modify the integrated GKL constraints, but this modification does not provide a consistent evasion of the no-go theorem under the standard assumptions. Exact four-dimensional Poincar\\'e invariance excludes a nonzero deterministic classical Maxwell field from the background, since its field strength would select preferred four-dimensional directions. The Maxwell sector therefore vanishes in the symmetric background and the usual smooth-brane obstruction is recovered. We also identify which assumptions must be relaxed for a nontrivial electromagnetic contribution and distinguish this background result from local consistency conditions for bulk gauge-field localization.",
+   "link": "https://arxiv.org/abs/2610.05798"
+  },
+  {
+   "id": "2610.05821",
+   "key": "2610.05821",
+   "title": "Global Consistency of Cosmological Braneworlds in Palatini and Metric-Affine f(R) Gravity",
+   "authors": "Paulo Michel L. T da Silva",
+   "abstract": "We investigate global consistency conditions for five-dimensional warped braneworlds in Palatini and metric-affine gravity. Starting from the generalized Gibbons-Kallosh-Linde framework, we derive integrated sum rules for cosmological warped geometries and examine how independent connection degrees of freedom modify the standard Einstein-gravity obstruction to smooth compact braneworlds. The analysis separates geometric, matter, and non-Riemannian contributions and clarifies the conditions under which the usual no-go result can be modified. We show that the generalized consistency relations provide necessary global constraints on admissible configurations and identify the terms responsible for possible departures from the Riemannian case. The results establish a systematic framework for testing the global consistency of smooth five-dimensional braneworlds in gravitational theories with independent affine structure.",
+   "link": "https://arxiv.org/abs/2610.05821"
+  },
+  {
+   "id": "2610.05946",
+   "key": "2610.05946",
+   "title": "Black Hole Entropy and Holographic Entanglement Entropy in DGP Brane Gravity",
+   "authors": "Takamasa Kanai",
+   "abstract": "We investigate the relation between gravitational entropy and holographic entanglement entropy in braneworld gravity with gravitational dynamics localized on the brane. We first consider the DGP brane model, in which an Einstein-Hilbert term is included in the brane action, and derive the condition under which the gravitational entropy of a braneworld black hole agrees with the holographic entanglement entropy. We show that the two entropies coincide when a specific condition involving the extrinsic curvature of the brane is satisfied. In particular, this condition is automatically satisfied for static configurations. We then generalize the brane-localized Einstein-Hilbert term to higher-curvature gravitational theories. For Lovelock gravity and $f(R)$ gravity on the brane, we derive the corresponding conditions for the equality between gravitational entropy and holographic entanglement entropy and show that they take the same form as that obtained for Einstein gravity. Although the equality is not guaranteed for general stationary configurations, the required condition is satisfied for static braneworld black holes, leading to an agreement between the two entropies. These results clarify the relation between gravitational entropy and holographic entanglement entropy in braneworld gravity and contribute to a deeper understanding of holography in braneworld settings.",
+   "link": "https://arxiv.org/abs/2610.05946"
+  },
+  {
+   "id": "2610.05957",
+   "key": "2610.05957",
+   "title": "IR flow of stochastic power spectra for interacting spectator scalars in the inflationary de Sitter spacetime",
+   "authors": "Vishal Nath, Sourav Bhattacharya",
+   "abstract": "In this work we investigate the behaviour of early inflationary cosmic correlation functions under the flow of the infrared scale for interacting spectator scalar field theories. We start with the derivation of the one-loop effective potentials for $\\phi^4$, $\\phi^4$-Yukawa and broken phase $O(N)$ model in the inflationary de Sitter spacetime, first using the local Schwinger-DeWitt expansion propagator, and next using the exact de Sitter propagator. The Schwinger-DeWitt expansion being valid in a sub-Hubble length scale, furnishes suitable framework to determine the leading curvature corrections to high energy phenomena having sub-Hubble Compton wavelengths. These effective potentials show spontaneous symmetry breaking pattern, and are next used as ultraviolet boundary conditions in the Wetterich equation generating the desired IR flow. The flow is shown to drive the theory towards symmetry restoration. Using these IR-improved effective potentials, we next compute the stochastic power spectra and spectral indices for the temporally coincident two point correlation function of the spectator scalar. We show that the results corresponding to the aforementioned two kind of propagators are roughly in qualitative agreement with each other, but may differ quantitatively significantly. Both of them show increase in the spectral index in the deep IR for $\\phi^4$ and $\\phi^4$-Yukawa. The effect of fermionic interaction has been emphasised. Also for the case of the $O(N)$ scalar, we demonstrate that the effective potential's shape becomes more and more insensitive to the flow as $N$ gets large. Implication of this on the correlation function has been discussed.",
+   "link": "https://arxiv.org/abs/2610.05957"
+  },
+  {
+   "id": "2610.06224",
+   "key": "2610.06224",
+   "title": "Momentum Flux for Small-Amplitude Oscillons",
+   "authors": "N. S. Manton, Azadeh Mohammadi",
+   "abstract": "An oscillon in scalar field theory in $(1+1)$-dimensions is an oscillating, localised, almost periodic classical solution that slowly radiates and decays to the vacuum solution. We calculate its momentum flux integrated over a period, which would be zero for an exact breather. For an oscillon of small amplitude $\\eps$, truncated at order $\\eps^N$, we show that the integrated momentum flux is of leading order $\\eps^{N+4}$ for even $N$ and $\\eps^{N+5}$ for odd $N$, except for $N=1$, where it is of order $\\eps^4$. It is therefore very small.",
+   "link": "https://arxiv.org/abs/2610.06224"
+  },
+  {
+   "id": "2610.06390",
+   "key": "2610.06390",
+   "title": "Nonlocal Dirac theory in curved spacetime and the Bunch--Davies vacuum",
+   "authors": "Paulo Jos\\'e Porf\\'irio, Ramires Nascimento da Silva",
+   "abstract": "We formulate a nonlocal spin-$1/2$ field theory in curved spacetime in which the form factor is a nonpolynomial entire function of the covariant Dirac operator. We derive the corresponding nonlocal Dirac equation and analyze its coupling to gravity and to a $\\rm U(1)$ gauge field. As an application, we study the theory in the open chart of de Sitter spacetime and construct the associated nonlocal Bunch--Davies modes. The nonlocal dynamics can be mapped, branch by branch, onto the local Dirac equation with an effective mass $M_n$. For the exponential form factors considered here, the effective masses are expressed in terms of branches of the Lambert-$W$ function. We show that the Euclidean analyticity structure of the Bunch--Davies construction is preserved. On the physical positive-residue branch, the Bogoliubov coefficients, squeezing parameter, occupation number, and entanglement entropy acquire explicit nonlocal corrections, while the absence of physical fermionic supercurvature modes is preserved. The local theory is smoothly recovered in the limit $\\Lambda\\to\\infty$.",
+   "link": "https://arxiv.org/abs/2610.06390"
+  },
+  {
+   "id": "2610.06470",
+   "key": "2610.06470",
+   "title": "A local second law for black hole dynamics in the charged large-$D$ membrane paradigm",
+   "authors": "Supratim Halder, Mangesh Mandlik",
+   "abstract": "The large-$D$ membrane paradigm provides a perturbative, non-gravitational description of black hole dynamics. While the local second law of thermodynamics has been established for neutral membranes, the explicit determination of the local entropy production equation within the charged large-$D$ membrane framework remains unsolved. In this paper, we compute the subleading-order correction to the divergence of the membrane velocity for a charged black hole in a flat background. We evaluate the corresponding scalar Einstein-Maxwell constraint equation at the physical event horizon via the non-affine null Raychaudhuri equation, and relate the physical horizon expressions to the auxiliary membrane kinematics, demonstrating that the membrane velocity produces a non-negative divergence at the first non-vanishing order in the membrane worldvolume, which is driven by two quadratic forms: the membrane shear and a novel contribution generated purely by the Maxwell field. Using this result, we construct the membrane entropy current and prove that its divergence is non-negative through this order, thereby establishing the local second law for the charged large-$D$ membrane paradigm.",
+   "link": "https://arxiv.org/abs/2610.06470"
+  },
+  {
+   "id": "2610.06564",
+   "key": "2610.06564",
+   "title": "Quantum Gravity in the Landau background gauge",
+   "authors": "J. Frenkel, S. Martins-Filho",
+   "abstract": "We examine, in the Landau background gauge, the effective action of a quantum theory of gravitational and matter fields. We analyse the BRST invariance of this theory and study the Ward identities which implement the symmetry of the background effective action. The off-shell and on-shell counterterm Lagrangians are explicitly calculated in this gauge at one-loop order. We argue that the matter self-energy in the Landau background gauge, which is finite to this order, may be finite also at higher loops.",
+   "link": "https://arxiv.org/abs/2610.06564"
+  },
+  {
+   "id": "2610.06772",
+   "key": "2610.06772",
+   "title": "de Sitter Wavefunction from Quadrangular Polylogarithms: Polygon Graphs",
+   "authors": "Livia Ferro, Tomasz Lukowski, Shruti Paranjape, Lecheng Ren, Marcus Spradlin, Anastasia Volovich, He-Chen Weng, Yao-Qi Zhang",
+   "abstract": "We present an explicit formula for the $n$-gon graph contribution to the integrand of the cosmological wavefunction for conformally coupled $\\phi^3$ theory in de Sitter space. Our result relies on the fact that its symbol satisfies total compatibility with respect to the $B_{2n-1}$ cluster algebra. We introduce $B$-type quadrangular polylogarithms, constructed from centrally symmetric quadrangulations of a $4n$-gon, and show that the $n$-gon wavefunction coefficient is expressed by a natural weight-$n$ function of this class. We prove our formula by directly relating the recursive differential equation satisfied by these wavefunction coefficients to a recursive coproduct formula for $B$-type quadrangular polylogarithms, with the remaining additive constant fixed by the soft limit.",
+   "link": "https://arxiv.org/abs/2610.06772"
   }
  ],
- "fetched_at": "2026-10-05T05:58:14.693Z"
+ "fetched_at": "2026-10-06T06:36:30.828Z"
 }
